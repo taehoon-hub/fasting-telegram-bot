@@ -5,3 +5,4 @@ firebase-service-account.json
 service-account.json
 *.key
 *.pem
+backup-working/
