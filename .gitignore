@@ -1,0 +1,7 @@
+.env
+node_modules/
+backup-working/
+firebase-service-account.json
+service-account.json
+*.key
+*.pem

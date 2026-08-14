@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <title>공복마스터 현황판</title>
+  <link rel="stylesheet" href="/board.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">FASTING MASTER</p>
+        <h1 id="board-title">현황판</h1>
+        <p id="board-updated" class="updated">자료를 불러오는 중입니다.</p>
+      </div>
+      <button id="refresh-button" class="icon-button" type="button" aria-label="새로고침">↻</button>
+    </header>
+
+    <div id="error-box" class="message error" hidden></div>
+    <div id="loading-box" class="message">현황판을 불러오는 중입니다.</div>
+
+    <section id="active-section" class="board-section" hidden>
+      <div class="section-heading">
+        <h2>현재진행순위</h2>
+        <span id="active-count" class="count-badge"></span>
+      </div>
+      <div class="table-wrap">
+        <table class="board-table active-table">
+          <thead>
+            <tr>
+              <th>순위</th>
+              <th>이름</th>
+              <th>목표</th>
+              <th>진행률</th>
+              <th>100점</th>
+              <th>95점</th>
+              <th>90점</th>
+              <th>80점</th>
+            </tr>
+          </thead>
+          <tbody id="active-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="completed-section" class="board-section" hidden>
+      <div class="section-heading">
+        <h2>공복 목표 달성</h2>
+        <span id="completed-count" class="count-badge"></span>
+      </div>
+      <div class="table-wrap">
+        <table class="board-table completed-table">
+          <thead>
+            <tr>
+              <th>순위</th>
+              <th>이름</th>
+              <th>목표</th>
+              <th>100점</th>
+              <th>95점</th>
+              <th>90점</th>
+              <th>80점</th>
+              <th>검수</th>
+              <th>최종점수</th>
+            </tr>
+          </thead>
+          <tbody id="completed-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div id="empty-box" class="message" hidden>표시할 현황 자료가 없습니다.</div>
+  </main>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="/board.js"></script>
+</body>
+</html>
