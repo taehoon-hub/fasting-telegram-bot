@@ -132,6 +132,8 @@ bot.on('message', async (message) => {
   const chatId = message.chat.id;
   const text = message.text.trim();
 
+  console.log(`Telegram 메시지 수신: ${chatId} ${text}`);
+
   try {
     if (text === '/start') {
       await bot.sendMessage(chatId, '공복 Telegram 봇을 시작합니다.', {
@@ -155,7 +157,10 @@ bot.on('message', async (message) => {
       }
 
       const data = doc.data();
-      await bot.sendMessage(chatId, `현재 상태: ${data.status || '-'}\n시작 시간: ${formatDate(data.startedAt)}\n목표 시간: ${formatDate(data.targetAt)}`);
+      await bot.sendMessage(
+        chatId,
+        `현재 상태: ${data.status || '-'}\n시작 시간: ${formatDate(data.startedAt)}\n목표 시간: ${formatDate(data.targetAt)}`
+      );
     }
   } catch (error) {
     console.error('메시지 처리 오류:', error);
