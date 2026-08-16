@@ -349,6 +349,11 @@ app.post('/telegram/webhook', (req, res) => {
   bot.processUpdate(req.body);
 });
 
+console.log('BOOT FILE: index.js');
+console.log('WEBHOOK MODE: enabled');
+console.log('RAILWAY COMMIT:', process.env.RAILWAY_GIT_COMMIT_SHA || 'unknown');
+console.log('PORT:', PORT);
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`HTTP 서버 시작: ${PORT}`);
   console.log('공복 Telegram 봇을 시작합니다.');
