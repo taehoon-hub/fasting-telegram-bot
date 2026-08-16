@@ -3,7 +3,8 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const TelegramBot = require('node-telegram-bot-api');
-const admin = require('firebase-admin');
+const { initializeApp, getApps, cert } = require('firebase-admin/app');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 const app = express();
 app.use(express.json());
@@ -25,12 +26,13 @@ function getServiceAccount() {
   return JSON.parse(Buffer.from(encoded, 'base64').toString('utf8'));
 }
 
-if (!admin.apps.length) {
-  admin.initializeApp({ credential: admin.credential.cert(getServiceAccount()) });
-}
+const firebaseApp = getApps().length
+  ? getApps()[0]
+  : initializeApp({
+      credential: cert(getServiceAccount())
+    });
 
-const db = admin.firestore();
-const FieldValue = admin.firestore.FieldValue;
+const db = getFirestore(firebaseApp);
 const bot = new TelegramBot(TOKEN);
 const draft = new Map();
 
