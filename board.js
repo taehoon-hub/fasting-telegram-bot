@@ -1,4 +1,4 @@
-﻿console.log('BOARD JS VERSION: 20260817-6');
+﻿console.log('BOARD JS VERSION: 20260817-7');
 
 (() => {
   const tg = window.Telegram?.WebApp;
@@ -85,11 +85,22 @@
         const target = Number(row.targetHours || 0);
         const percent = Number(row.progressPercent || 0);
 
+        const scores = row.scoreCounts || {};
+
+        function scoreCell(value) {
+          const count = Number(value || 0);
+          return count === 0 ? '' : String(count);
+        }
+
         return '<tr>' +
           '<td>' + rank + '</td>' +
           '<td>' + name + '</td>' +
           '<td>' + target + '시간</td>' +
           '<td>' + percent + '%</td>' +
+          '<td>' + scoreCell(scores[100]) + '</td>' +
+          '<td>' + scoreCell(scores[95]) + '</td>' +
+          '<td>' + scoreCell(scores[90]) + '</td>' +
+          '<td>' + scoreCell(scores[80]) + '</td>' +
           '</tr>';
       }).join('');
     }
