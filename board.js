@@ -1,34 +1,134 @@
-﻿console.log('BOARD JS VERSION: 20260817-5');
+﻿console.log('BOARD JS VERSION: 20260817-6');
 
 (() => {
-  document.body.innerHTML = '<div id="board-diagnostic" style="font-family: sans-serif; padding: 24px; color: #111; background: #fff; min-height: 100vh; box-sizing: border-box;"><h2>현황판 진단 화면</h2><p>board.js는 실행되었습니다.</p><p id="diag-status">확인 중...</p><pre id="diag-detail" style="white-space: pre-wrap; background: #f3f3f3; padding: 12px;"></pre></div>';
+  const tg = window.Telegram?.WebApp;
 
-  const status = document.getElementById('diag-status');
-  const detail = document.getElementById('diag-detail');
+  if (tg) {
+    tg.ready();
+    tg.expand();
+  }
+
   const params = new URLSearchParams(window.location.search);
   const group = params.get('group');
 
-  async function run() {
-    if (!group) {
-      status.textContent = '오류: URL에 group 값이 없습니다.';
-      detail.textContent = window.location.href;
-      return;
-    }
+  const elements = {
+    refresh: document.getElementById('refresh-button'),
+    title: document.getElementById('board-title'),
+    updated: document.getElementById('board-updated'),
+    loading: document.getElementById('loading-box'),
+    error: document.getElementById('error-box'),
+    activeSection: document.getElementById('active-section'),
+    activeCount: document.getElementById('active-count'),
+    activeBody: document.getElementById('active-body'),
+    empty: document.getElementById('empty-box')
+  };
 
-    const url = '/api/board?group=' + encodeURIComponent(group);
-    detail.textContent = '요청: ' + url;
-
-    try {
-      const response = await fetch(url, { cache: 'no-store' });
-      const text = await response.text();
-
-      status.textContent = 'API 응답: HTTP ' + response.status;
-      detail.textContent += '\n\n응답:\n' + text;
-    } catch (error) {
-      status.textContent = '네트워크 오류';
-      detail.textContent += '\n\n' + String(error);
+  function setText(element, value) {
+    if (element) {
+      element.textContent = value;
     }
   }
 
-  run();
+  function showError(message) {
+    if (elements.loading) {
+      elements.loading.hidden = true;
+    }
+
+    if (elements.error) {
+      elements.error.hidden = false;
+      elements.error.textContent = message;
+    }
+  }
+
+  function render(rows) {
+    if (elements.loading) {
+      elements.loading.hidden = true;
+    }
+
+    if (elements.title) {
+      elements.title.textContent = '공복 현황판';
+    }
+
+    if (elements.updated) {
+      elements.updated.textContent =
+        '그룹: ' + group + ' · 업데이트: ' +
+        new Date().toLocaleTimeString('ko-KR');
+    }
+
+    if (!rows.length) {
+      if (elements.empty) {
+        elements.empty.hidden = false;
+        elements.empty.textContent = '현재 진행 중인 공복 데이터가 없습니다.';
+      }
+
+      if (elements.activeSection) {
+        elements.activeSection.hidden = true;
+      }
+
+      return;
+    }
+
+    if (elements.empty) {
+      elements.empty.hidden = true;
+    }
+
+    if (elements.activeSection) {
+      elements.activeSection.hidden = false;
+    }
+
+    setText(elements.activeCount, rows.length + '명');
+
+    if (elements.activeBody) {
+      elements.activeBody.innerHTML = rows.map((row) => {
+        const rank = Number(row.rank || 0);
+        const name = String(row.name || '이름 없음');
+        const target = Number(row.targetHours || 0);
+        const percent = Number(row.progressPercent || 0);
+
+        return '<tr>' +
+          '<td>' + rank + '</td>' +
+          '<td>' + name + '</td>' +
+          '<td>' + target + '시간</td>' +
+          '<td>' + percent + '%</td>' +
+          '</tr>';
+      }).join('');
+    }
+  }
+
+  async function loadBoard() {
+    if (!group) {
+      showError('그룹 정보가 없습니다.');
+      return;
+    }
+
+    if (elements.loading) {
+      elements.loading.hidden = false;
+      elements.loading.textContent = '현황판을 불러오는 중...';
+    }
+
+    if (elements.error) {
+      elements.error.hidden = true;
+    }
+
+    try {
+      const url = '/api/board?group=' + encodeURIComponent(group);
+      const response = await fetch(url, { cache: 'no-store' });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'HTTP ' + response.status);
+      }
+
+      render(Array.isArray(data.rows) ? data.rows : []);
+    } catch (error) {
+      console.error('BOARD LOAD ERROR:', error);
+      showError('현황판을 불러오지 못했습니다: ' + error.message);
+    }
+  }
+
+  if (elements.refresh) {
+    elements.refresh.addEventListener('click', loadBoard);
+  }
+
+  loadBoard();
 })();
