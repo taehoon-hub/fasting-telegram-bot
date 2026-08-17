@@ -96,6 +96,130 @@
       display: none !important;
     }
   </style>
+
+
+<style id="mobile-board-style">
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  overflow-x: hidden !important;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.board-table {
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
+}
+
+.mobile-board-cards {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .board-table {
+    display: none !important;
+  }
+
+  .mobile-board-cards {
+    display: grid;
+    width: 100%;
+    max-width: 100%;
+    gap: 10px;
+    padding: 8px 0;
+  }
+
+  .mobile-board-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid #d9dee7;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+  }
+
+  .mobile-board-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    margin-bottom: 8px;
+  }
+
+  .mobile-board-rank {
+    flex: 0 0 auto;
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  .mobile-board-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .mobile-board-progress {
+    flex: 0 0 auto;
+    color: #2563eb;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .mobile-board-info {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    width: 100%;
+  }
+
+  .mobile-board-score {
+    min-width: 0;
+    padding: 7px 3px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    text-align: center;
+    font-size: 11px;
+  }
+
+  .mobile-board-score strong {
+    display: block;
+    font-size: 14px;
+  }
+
+  body,
+  main,
+  section,
+  div {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  h1,
+  h2,
+  h3,
+  p,
+  button,
+  input,
+  select {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
+</style>
 </head>
 
 <body>
