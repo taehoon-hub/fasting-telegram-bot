@@ -52,7 +52,7 @@ const keyboard = (inline_keyboard) => ({ inline_keyboard });
 function webAppButton(chatId, group) {
   const url = new URL(BOARD_APP_URL);
   url.searchParams.set('chat_id', String(chatId));
-  url.searchParams.set('group', String(group || '전체'));
+  url.searchParams.set('group', String(group || 'all'));
   return { text: 'Board', web_app: { url: url.toString() } };
 }
 
@@ -425,7 +425,13 @@ app.get('/api/board', async (req, res) => {
         rank: index + 1,
         name: session.name,
         targetHours: session.targetHours,
-        progressPercent: percent(session)
+        progressPercent: percent(session),
+        scoreCounts: {
+          100: Number(session.scoreCounts?.['100'] ?? session.scoreCounts?.[100] ?? 0),
+          95: Number(session.scoreCounts?.['95'] ?? session.scoreCounts?.[95] ?? 0),
+          90: Number(session.scoreCounts?.['90'] ?? session.scoreCounts?.[90] ?? 0),
+          80: Number(session.scoreCounts?.['80'] ?? session.scoreCounts?.[80] ?? 0)
+        }
       }))
     });
   } catch (error) {
