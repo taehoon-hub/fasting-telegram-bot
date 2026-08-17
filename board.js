@@ -1,296 +1,92 @@
-﻿console.log('BOARD JS VERSION: 20260817-1');
+﻿console.log('BOARD JS VERSION: 20260817-3');
+
 (() => {
   const tg = window.Telegram?.WebApp;
-
   const state = {
     group: null,
     refreshInProgress: false
   };
 
+  if (tg) {
+    tg.ready();
+    tg.expand();
+  }
+
   const elements = {
-    title: document.getElementById('board-title'),
-    updated: document.getElementById('board-updated'),
-    loading: document.getElementById('loading-box'),
-    error: document.getElementById('error-box'),
-    empty: document.getElementById('empty-box'),
-    activeSection: document.getElementById('active-section'),
-    completedSection: document.getElementById('completed-section'),
-    activeCount: document.getElementById('active-count'),
-    completedCount: document.getElementById('completed-count'),
-    activeBody: document.getElementById('active-body'),
-    completedBody: document.getElementById('completed-body'),
-    refresh: document.getElementById('refresh-button')
+    refresh: document.getElementById('refresh-button'),
+    board: document.getElementById('board'),
+    status: document.getElementById('status'),
+    group: document.getElementById('group')
   };
 
-  function escapeHtml(value) {
-    return String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+  function setStatus(message) {
+    if (elements.status) {
+      elements.status.textContent = message;
+    }
   }
 
-  function number(value) {
-    const result = Number(value);
-    return Number.isFinite(result) ? result : 0;
+  function renderReview(completed) {
+    const reviewClass = completed ? 'review-complete' : 'review-pending';
+    const reviewText = completed ? '완료' : '대기 중';
+
+    return '<span class="' + reviewClass + '">' + reviewText + '</span>';
   }
 
-  function scoreCell(count) {
-    const value = number(count);
-    return value > 0 ? `${value}紐? : '-';
-  }
-
-  function reviewCell(entry) {
-    const completed = entry.selfReviewStatus === 'completed';
-
-    return `
-      <span class="${completed ? 'review-complete' : 'review-pending'}">
-        ${completed ? '?꾨즺' : '?湲?以?}
-      </span>
-    `;
-  }
-
-  function finalScoreCell(entry) {
-    if (
-      entry.selfReviewStatus !== 'completed' ||
-      !entry.selfReviewScore
-    ) {
-      return '-';
+  function renderBoard(rows) {
+    if (!elements.board) {
+      return;
     }
 
-    return `
-      <span class="final-score">
-        ${escapeHtml(entry.selfReviewScore)}??      </span>
-    `;
-  }
+    if (!Array.isArray(rows) || rows.length === 0) {
+      elements.board.innerHTML = '<p>표시할 데이터가 없습니다.</p>';
+      return;
+    }
 
-  function scoreCounts(entry) {
-    return entry.scoreCounts || {
-      100: 0,
-      95: 0,
-      90: 0,
-      80: 0
-    };
-  }
+    elements.board.innerHTML = rows.map((row, index) => {
+      const name = row.name || row.userName || row.username || '이름 없음';
+      const hours = row.hours ?? row.fastingHours ?? row.duration ?? '-';
+      const completed = Boolean(
+        row.completed || row.reviewed || row.isCompleted
+      );
 
-  function renderActive(entries) {
-    if (!elements.activeBody) return;
-
-    elements.activeBody.innerHTML = entries.map((entry, index) => {
-      const scores = scoreCounts(entry);
-
-      return `
-        <tr>
-          <td class="rank-cell">${index + 1}</td>
-          <td class="name-cell">${escapeHtml(entry.name)}</td>
-          <td>${number(entry.targetHours)}?쒓컙</td>
-          <td class="progress-cell">${number(entry.progressPercent)}%</td>
-          <td class="score-cell ${scores[100] ? '' : 'empty'}">
-            ${scoreCell(scores[100])}
-          </td>
-          <td class="score-cell ${scores[95] ? '' : 'empty'}">
-            ${scoreCell(scores[95])}
-          </td>
-          <td class="score-cell ${scores[90] ? '' : 'empty'}">
-            ${scoreCell(scores[90])}
-          </td>
-          <td class="score-cell ${scores[80] ? '' : 'empty'}">
-            ${scoreCell(scores[80])}
-          </td>
-        </tr>
-      `;
+      return '<div class="board-row">' +
+        '<span class="rank">' + (index + 1) + '</span>' +
+        '<span class="name">' + name + '</span>' +
+        '<span class="hours">' + hours + '시간</span>' +
+        renderReview(completed) +
+        '</div>';
     }).join('');
-
-    if (elements.activeCount) {
-      elements.activeCount.textContent = `${entries.length}紐?;
-    }
-
-    if (elements.activeSection) {
-      elements.activeSection.hidden = entries.length === 0;
-    }
-  }
-
-  function renderCompleted(entries) {
-    if (!elements.completedBody) return;
-
-    elements.completedBody.innerHTML = entries.map((entry, index) => {
-      const scores = scoreCounts(entry);
-
-      return `
-        <tr>
-          <td class="rank-cell">${index + 1}</td>
-          <td class="name-cell">${escapeHtml(entry.name)}</td>
-          <td>${number(entry.targetHours)}?쒓컙</td>
-          <td class="score-cell ${scores[100] ? '' : 'empty'}">
-            ${scoreCell(scores[100])}
-          </td>
-          <td class="score-cell ${scores[95] ? '' : 'empty'}">
-            ${scoreCell(scores[95])}
-          </td>
-          <td class="score-cell ${scores[90] ? '' : 'empty'}">
-            ${scoreCell(scores[90])}
-          </td>
-          <td class="score-cell ${scores[80] ? '' : 'empty'}">
-            ${scoreCell(scores[80])}
-          </td>
-          <td>${reviewCell(entry)}</td>
-          <td>${finalScoreCell(entry)}</td>
-        </tr>
-      `;
-    }).join('');
-
-    if (elements.completedCount) {
-      elements.completedCount.textContent = `${entries.length}紐?;
-    }
-
-    if (elements.completedSection) {
-      elements.completedSection.hidden = entries.length === 0;
-    }
-  }
-
-  function formatUpdatedAt(value) {
-    if (!value) {
-      return '?낅뜲?댄듃 ?뺣낫 ?놁쓬';
-    }
-
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-      return '?낅뜲?댄듃 ?뺣낫 ?놁쓬';
-    }
-
-    return `?낅뜲?댄듃 ${date.toLocaleString('ko-KR', {
-      timeZone: 'Asia/Seoul',
-      month: 'numeric',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    })}`;
-  }
-
-  function setLoading(visible) {
-    if (elements.loading) {
-      elements.loading.hidden = !visible;
-    }
-  }
-
-  function setError(message) {
-    if (!elements.error) return;
-
-    elements.error.textContent = message || '';
-    elements.error.hidden = !message;
-  }
-
-  function getGroup() {
-    const params = new URLSearchParams(window.location.search);
-
-    return (
-      params.get('group') ||
-      params.get('groupTag') ||
-      ''
-    );
   }
 
   async function loadBoard() {
-    if (state.refreshInProgress) return;
+    if (state.refreshInProgress) {
+      return;
+    }
 
     state.refreshInProgress = true;
-    setLoading(true);
-    setError('');
+    setStatus('불러오는 중...');
 
     try {
-      const group = state.group || getGroup();
-
-      if (!group) {
-        throw new Error('洹몃９ ?뺣낫媛 ?놁뒿?덈떎.');
-      }
-
-      const params = new URLSearchParams();
-      params.set('group', group);
-
-      const response = await fetch(
-        `/api/board?${params.toString()}`,
-        {
-          headers: {
-            Accept: 'application/json'
-          }
-        }
-      );
-
-      const payload = await response.json();
+      const response = await fetch('/api/board', {
+        cache: 'no-store'
+      });
 
       if (!response.ok) {
-        throw new Error(
-          payload.error || `?꾪솴??API ?ㅻ쪟: ${response.status}`
-        );
+        throw new Error('HTTP ' + response.status);
       }
 
-      const rows = Array.isArray(payload.rows)
-        ? payload.rows
-        : [];
+      const data = await response.json();
+      const rows = Array.isArray(data)
+        ? data
+        : (data.rows || data.board || data.data || []);
 
-      state.group = payload.group || group;
-
-      if (elements.title) {
-        elements.title.textContent = `怨듬났 ?꾪솴??쨌 ${state.group}`;
-      }
-
-      if (elements.updated) {
-        elements.updated.textContent = formatUpdatedAt(
-          payload.updatedAt || new Date().toISOString()
-        );
-      }
-
-      renderActive(rows);
-      renderCompleted([]);
-
-      if (elements.empty) {
-        elements.empty.hidden = rows.length > 0;
-      }
+      renderBoard(rows);
+      setStatus('업데이트 완료');
     } catch (error) {
-      console.error('?꾪솴??濡쒕뱶 ?ㅻ쪟:', error);
-
-      if (elements.activeSection) {
-        elements.activeSection.hidden = true;
-      }
-
-      if (elements.completedSection) {
-        elements.completedSection.hidden = true;
-      }
-
-      if (elements.empty) {
-        elements.empty.hidden = true;
-      }
-
-      setError(
-        error.message || '?꾪솴?먯쓣 遺덈윭?ㅼ? 紐삵뻽?듬땲??'
-      );
+      console.error('현황판 로딩 오류:', error);
+      setStatus('데이터를 불러오지 못했습니다.');
     } finally {
-      setLoading(false);
       state.refreshInProgress = false;
-
-      if (tg) {
-        tg.ready();
-      }
-    }
-  }
-
-  function initializeTelegram() {
-    if (!tg) return;
-
-    tg.ready();
-    tg.expand();
-
-    if (typeof tg.enableClosingConfirmation === 'function') {
-      tg.enableClosingConfirmation();
-    }
-
-    if (tg.themeParams?.bg_color) {
-      document.documentElement.style.setProperty(
-        '--bg',
-        tg.themeParams.bg_color
-      );
     }
   }
 
@@ -298,8 +94,5 @@
     elements.refresh.addEventListener('click', loadBoard);
   }
 
-  initializeTelegram();
-
-  state.group = getGroup();
   loadBoard();
 })();
