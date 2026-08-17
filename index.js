@@ -89,13 +89,20 @@ async function findSession(chatId) {
   return { id: snap.docs[0].id, ...snap.docs[0].data() };
 }
 
-function sessionKeyboard(chatId, session) {
+function scoreKeyboard(sessionId) {
   return keyboard([
-    [button('Progress', `progress:${session.id}`), webAppButton(chatId, session.groupTag)],
-    [button('Stop fasting', `stop_confirm:${session.id}`), button('Alerts', `alerts:${session.id}`)]
+    [button('100', `score:100:${sessionId}`), button('95', `score:95:${sessionId}`)],
+    [button('90', `score:90:${sessionId}`), button('80', `score:80:${sessionId}`)]
   ]);
 }
 
+function sessionKeyboard(chatId, session) {
+  return keyboard([
+    [button('Progress', `progress:${session.id}`), webAppButton(chatId, session.groupTag)],
+    [button('Stop', `stop_confirm:${session.id}`), button('Alerts', `alerts:${session.id}`)],
+    [button('Record score', `score_prompt:${session.id}`)]
+  ]);
+}
 async function updateMessage(chatId, messageId, session) {
   try {
     await bot.editMessageText(progressMessage(session), {
@@ -184,6 +191,56 @@ bot.on('callback_query', async (query) => {
   try {
     await bot.answerCallbackQuery(query.id);
 
+    if (data.startsWith('score_prompt:')) {
+      const session = await findSession(chatId);
+      if (!session) return;
+
+      await bot.editMessageText(
+        'Select a score for your current fasting progress.',
+        {
+          chat_id: chatId,
+          message_id: messageId,
+          reply_markup: scoreKeyboard(session.id)
+        }
+      );
+      return;
+    }
+
+    if (data.startsWith('score:')) {
+      const [, scoreText, sessionId] = data.split(':');
+      const score = Number(scoreText);
+      const session = await findSession(chatId);
+
+      if (!session || session.id !== sessionId || ![100, 95, 90, 80].includes(score)) {
+        return;
+      }
+
+      const field = `scoreCounts.${score}`;
+      const ref = db.collection('liveSessions').doc(session.id);
+
+      await ref.update({
+        [field]: FieldValue.increment(1),
+        scoreCheckCount: FieldValue.increment(1),
+        lastScore: score,
+        lastScoreAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+
+      await bot.editMessageText(
+        'Score saved: ' + score,
+        {
+          chat_id: chatId,
+          message_id: messageId,
+          reply_markup: keyboard([
+            [button('30 min later', `alert:30:${session.id}`)],
+            [button('1 hour later', `alert:60:${session.id}`)],
+            [button('Disable alerts', `alert:off:${session.id}`)],
+            [button('View progress', `progress:${session.id}`)]
+          ])
+        }
+      );
+      return;
+    }
     if (data === 'help') {
       await bot.sendMessage(chatId, 'Choose a fasting duration to record your session and reminders.');
       return;
@@ -228,6 +285,15 @@ bot.on('callback_query', async (query) => {
         expiresAt: targetAt,
         status: 'active',
         firstCheckDone: false,
+        scoreCounts: {
+          100: 0,
+          95: 0,
+          90: 0,
+          80: 0
+        },
+        scoreCheckCount: 0,
+        lastScore: null,
+        lastScoreAt: null,
         alertsEnabled: true,
         reminderMinutes: FIRST_CHECKIN_MINUTES,
         nextReminderAt,
