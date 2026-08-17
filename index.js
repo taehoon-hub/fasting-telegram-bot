@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 
 const path = require('path');
 const express = require('express');
@@ -9,6 +9,18 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const app = express();
 app.use(express.json());
 
+app.use(express.static(__dirname, {
+  etag: false,
+  maxAge: 0,
+  setHeaders: (res, filePath) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    if (filePath.endsWith('.js')) res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    if (filePath.endsWith('.css')) res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  }
+}));
+
 const PORT = Number(process.env.PORT || 3000);
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const BOARD_APP_URL = String(process.env.BOARD_APP_URL || '').replace(/\/$/, '');
@@ -16,21 +28,19 @@ const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET;
 const FIRST_CHECKIN_MINUTES = Number(process.env.FIRST_CHECKIN_MINUTES || 120);
 const BOARD_SNAPSHOT_MINUTES = Number(process.env.BOARD_SNAPSHOT_MINUTES || 30);
 
-if (!TOKEN) throw new Error('TELEGRAM_BOT_TOKEN이 없습니다.');
-if (!/^https:\/\//i.test(BOARD_APP_URL)) throw new Error('BOARD_APP_URL은 https:// 주소여야 합니다.');
-if (!TELEGRAM_WEBHOOK_SECRET) throw new Error('TELEGRAM_WEBHOOK_SECRET이 없습니다.');
+if (!TOKEN) throw new Error('TELEGRAM_BOT_TOKEN is missing.');
+if (!/^https:\/\//i.test(BOARD_APP_URL)) throw new Error('BOARD_APP_URL must start with https://.');
+if (!TELEGRAM_WEBHOOK_SECRET) throw new Error('TELEGRAM_WEBHOOK_SECRET is missing.');
 
 function getServiceAccount() {
   const encoded = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
-  if (!encoded) throw new Error('FIREBASE_SERVICE_ACCOUNT_BASE64가 없습니다.');
+  if (!encoded) throw new Error('FIREBASE_SERVICE_ACCOUNT_BASE64 is missing.');
   return JSON.parse(Buffer.from(encoded, 'base64').toString('utf8'));
 }
 
 const firebaseApp = getApps().length
   ? getApps()[0]
-  : initializeApp({
-      credential: cert(getServiceAccount())
-    });
+  : initializeApp({ credential: cert(getServiceAccount()) });
 
 const db = getFirestore(firebaseApp);
 const bot = new TelegramBot(TOKEN);
@@ -43,7 +53,7 @@ function webAppButton(chatId, group) {
   const url = new URL(BOARD_APP_URL);
   url.searchParams.set('chat_id', String(chatId));
   if (group) url.searchParams.set('group', String(group));
-  return { text: '현황판', web_app: { url: url.toString() } };
+  return { text: 'Board', web_app: { url: url.toString() } };
 }
 
 function minutesBetween(a, b) {
@@ -62,11 +72,11 @@ function percent(session) {
 function progressMessage(session) {
   const elapsed = minutesBetween(session.startedAt, new Date());
   const remaining = Math.max(0, minutesBetween(new Date(), session.targetAt));
-  let next = '알림 꺼짐';
+  let next = 'Alerts off';
   if (session.alertsEnabled !== false && session.nextReminderAt) {
-    next = `${Math.max(0, minutesBetween(new Date(), session.nextReminderAt))}분`;
+    next = `${Math.max(0, minutesBetween(new Date(), session.nextReminderAt))} min`;
   }
-  return `공복 진행 중입니다.\n\n이름: ${session.name}\n그룹: ${session.groupTag}\n목표시간: ${session.targetHours}시간\n\n현재 ${Math.floor(elapsed / 60)}시간 ${elapsed % 60}분째 공복 진행 중입니다.\n\n목표시간까지 ${Math.floor(remaining / 60)}시간 ${remaining % 60}분 남았습니다.\n\n다음 알림까지: ${next}`;
+  return `Fasting in progress.\n\nName: ${session.name}\nGroup: ${session.groupTag}\nGoal: ${session.targetHours} hours\n\nElapsed: ${Math.floor(elapsed / 60)} hours ${elapsed % 60} minutes\n\nRemaining: ${Math.floor(remaining / 60)} hours ${remaining % 60} minutes\n\nNext alert: ${next}`;
 }
 
 async function findSession(chatId) {
@@ -81,8 +91,8 @@ async function findSession(chatId) {
 
 function sessionKeyboard(chatId, session) {
   return keyboard([
-    [button('진행상황', `progress:${session.id}`), webAppButton(chatId, session.groupTag)],
-    [button('공복중지', `stop_confirm:${session.id}`), button('알림 설정', `alerts:${session.id}`)]
+    [button('Progress', `progress:${session.id}`), webAppButton(chatId, session.groupTag)],
+    [button('Stop fasting', `stop_confirm:${session.id}`), button('Alerts', `alerts:${session.id}`)]
   ]);
 }
 
@@ -117,27 +127,26 @@ bot.onText(/^\/start$/, async (msg) => {
   try {
     await saveTelegramUser(msg);
     const existing = await findSession(msg.chat.id);
-
     if (existing) {
-      await bot.sendMessage(msg.chat.id, `진행 중인 공복이 있습니다.\n\n목표시간: ${existing.targetHours}시간\n\n기존 공복을 이어서 진행하시겠습니까?`, {
+      await bot.sendMessage(msg.chat.id, `An active fasting session exists.\n\nGoal: ${existing.targetHours} hours\n\nContinue?`, {
         reply_markup: keyboard([
-          [button('이어서 진행', `resume:${existing.id}`)],
-          [button('중지하고 새로 시작', `restart:${existing.id}`)]
+          [button('Continue', `resume:${existing.id}`)],
+          [button('Stop and restart', `restart:${existing.id}`)]
         ])
       });
       return;
     }
 
     draft.set(String(msg.chat.id), {});
-    await bot.sendMessage(msg.chat.id, '안녕하세요. 공복 리마인더입니다.\n\n공복 시작부터 체크인, 목표 달성까지 함께 기록해 드릴게요.', {
+    await bot.sendMessage(msg.chat.id, 'Welcome to the fasting reminder.\n\nWe will track your fasting session and reminders.', {
       reply_markup: keyboard([
-        [button('공복 시작하기', 'start_fasting')],
+        [button('Start fasting', 'start_fasting')],
         [webAppButton(msg.chat.id)],
-        [button('사용 방법', 'help')]
+        [button('Help', 'help')]
       ])
     });
   } catch (error) {
-    console.error('/start 오류:', error);
+    console.error('start handler error:', error);
   }
 });
 
@@ -148,7 +157,7 @@ bot.on('message', async (msg) => {
 
   const parts = msg.text.trim().split('_');
   if (parts.length < 2 || !parts.at(-1) || !parts.slice(0, -1).join('_')) {
-    await bot.sendMessage(msg.chat.id, '이름_그룹명 형식으로 입력해 주세요.\n\n예: 홍길동_여수');
+    await bot.sendMessage(msg.chat.id, 'Please enter the format name_group. Example: Messi_Seoul');
     return;
   }
 
@@ -157,11 +166,11 @@ bot.on('message', async (msg) => {
   state.step = 'target';
   draft.set(String(msg.chat.id), state);
 
-  await bot.sendMessage(msg.chat.id, `이름: ${state.name}\n그룹: ${state.groupTag}\n\n공복 시간을 선택해 주세요.`, {
+  await bot.sendMessage(msg.chat.id, `Name: ${state.name}\nGroup: ${state.groupTag}\n\nChoose fasting duration.`, {
     reply_markup: keyboard([
-      [button('12시간', 'target:12'), button('14시간', 'target:14')],
-      [button('16시간', 'target:16'), button('18시간', 'target:18')],
-      [button('20시간', 'target:20')]
+      [button('12 hours', 'target:12'), button('14 hours', 'target:14')],
+      [button('16 hours', 'target:16'), button('18 hours', 'target:18')],
+      [button('20 hours', 'target:20')]
     ])
   });
 });
@@ -176,14 +185,14 @@ bot.on('callback_query', async (query) => {
     await bot.answerCallbackQuery(query.id);
 
     if (data === 'help') {
-      await bot.sendMessage(chatId, '공복 시간을 선택하면 시작 시각부터 체크인과 목표 달성까지 기록하고 알려드립니다.');
+      await bot.sendMessage(chatId, 'Choose a fasting duration to record your session and reminders.');
       return;
     }
 
     if (data === 'start_fasting') {
       state.step = 'name';
       draft.set(String(chatId), state);
-      await bot.sendMessage(chatId, '현황판에 표시할 이름을 입력해 주세요.\n이름 뒤에 _그룹명을 붙여 주세요.\n\n예: 홍길동_여수');
+      await bot.sendMessage(chatId, 'Enter the display name in name_group format. Example: Messi_Seoul');
       return;
     }
 
@@ -191,12 +200,12 @@ bot.on('callback_query', async (query) => {
       state.targetHours = Number(data.split(':')[1]);
       state.step = 'confirm';
       draft.set(String(chatId), state);
-      await bot.editMessageText(`이름: ${state.name}\n그룹: ${state.groupTag}\n목표시간: ${state.targetHours}시간\n\n공복을 시작할까요?`, {
+      await bot.editMessageText(`Name: ${state.name}\nGroup: ${state.groupTag}\nGoal: ${state.targetHours} hours\n\nStart fasting?`, {
         chat_id: chatId,
         message_id: messageId,
         reply_markup: keyboard([
-          [button('공복 시작', 'confirm_start')],
-          [button('이름 수정', 'start_fasting')]
+          [button('Start', 'confirm_start')],
+          [button('Edit name', 'start_fasting')]
         ])
       });
       return;
@@ -245,7 +254,7 @@ bot.on('callback_query', async (query) => {
       const session = await findSession(chatId);
       if (session) await db.collection('liveSessions').doc(session.id).delete();
       draft.set(String(chatId), { step: 'name' });
-      await bot.sendMessage(chatId, '새 공복을 시작합니다.\n\n이름_그룹명 형식으로 입력해 주세요.');
+      await bot.sendMessage(chatId, 'Starting a new fasting session. Enter name_group.');
       return;
     }
 
@@ -259,9 +268,9 @@ bot.on('callback_query', async (query) => {
       const session = await findSession(chatId);
       if (!session) return;
       await bot.editMessageReplyMarkup(keyboard([
-        [button('30분 뒤', `alert:30:${session.id}`), button('1시간 뒤', `alert:60:${session.id}`)],
-        [button('2시간 뒤', `alert:120:${session.id}`)],
-        [button('알림 끄기', `alert:off:${session.id}`)]
+        [button('30 minutes', `alert:30:${session.id}`), button('1 hour', `alert:60:${session.id}`)],
+        [button('2 hours', `alert:120:${session.id}`)],
+        [button('Disable alerts', `alert:off:${session.id}`)]
       ]), { chat_id: chatId, message_id: messageId });
       return;
     }
@@ -288,8 +297,8 @@ bot.on('callback_query', async (query) => {
       const session = await findSession(chatId);
       if (!session) return;
       await bot.editMessageReplyMarkup(keyboard([
-        [button('계속 진행', `resume:${session.id}`)],
-        [button('종료하기', `stop:${session.id}`)]
+        [button('Continue', `resume:${session.id}`)],
+        [button('Stop', `stop:${session.id}`)]
       ]), { chat_id: chatId, message_id: messageId });
       return;
     }
@@ -297,17 +306,35 @@ bot.on('callback_query', async (query) => {
     if (data.startsWith('stop:')) {
       const session = await findSession(chatId);
       if (session) await db.collection('liveSessions').doc(session.id).delete();
-      await bot.editMessageText('공복을 종료했습니다.\n\n다음 공복이 필요할 때 다시 시작해 주세요.', { chat_id: chatId, message_id: messageId });
+      await bot.editMessageText('Fasting session ended.', { chat_id: chatId, message_id: messageId });
     }
   } catch (error) {
-    console.error('콜백 처리 오류:', error);
+    console.error('callback handler error:', error);
   }
 });
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
-app.get('/board', (_req, res) => res.sendFile(path.join(__dirname, 'board.html')));
+
+app.get('/board.js', (_req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.type('application/javascript');
+  res.sendFile(path.join(__dirname, 'board.js'));
+});
+
+app.get('/board.css', (_req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.type('text/css');
+  res.sendFile(path.join(__dirname, 'board.css'));
+});
+
+app.get('/board', (_req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.sendFile(path.join(__dirname, 'board.html'));
+});
 
 app.get('/api/board', async (req, res) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+
   try {
     const group = String(req.query.group || '');
     if (!group) return res.status(400).json({ error: 'group query parameter is required' });
@@ -336,17 +363,14 @@ app.get('/api/board', async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('/api/board 오류:', error);
-    res.status(500).json({ error: '현황판을 불러오지 못했습니다.' });
+    console.error('/api/board error:', error);
+    res.status(500).json({ error: 'Unable to load board.' });
   }
 });
 
 app.post('/telegram/webhook', (req, res) => {
   const receivedSecret = req.get('X-Telegram-Bot-Api-Secret-Token');
-  if (receivedSecret !== TELEGRAM_WEBHOOK_SECRET) {
-    return res.sendStatus(403);
-  }
-
+  if (receivedSecret !== TELEGRAM_WEBHOOK_SECRET) return res.sendStatus(403);
   res.sendStatus(200);
   bot.processUpdate(req.body);
 });
@@ -357,9 +381,9 @@ console.log('RAILWAY COMMIT:', process.env.RAILWAY_GIT_COMMIT_SHA || 'unknown');
 console.log('PORT:', PORT);
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`HTTP 서버 시작: ${PORT}`);
-  console.log('공복 Telegram 봇을 시작합니다.');
-  console.log(`Webhook endpoint: /telegram/webhook`);
-  console.log(`알림 작업 시작 - 첫 체크인: ${FIRST_CHECKIN_MINUTES}분`);
-  console.log(`현황판 자동 갱신 시작 - ${BOARD_SNAPSHOT_MINUTES}분마다`);
+  console.log(`HTTP server started: ${PORT}`);
+  console.log('Fasting Telegram bot started.');
+  console.log('Webhook endpoint: /telegram/webhook');
+  console.log(`First check-in reminder: ${FIRST_CHECKIN_MINUTES} minutes`);
+  console.log(`Board snapshot interval: ${BOARD_SNAPSHOT_MINUTES} minutes`);
 });
