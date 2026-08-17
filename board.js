@@ -1,4 +1,4 @@
-﻿console.log('BOARD JS VERSION: 20260817-7');
+console.log('BOARD JS VERSION: 20260818-1');
 
 (() => {
   const tg = window.Telegram?.WebApp;
@@ -9,7 +9,7 @@
   }
 
   const params = new URLSearchParams(window.location.search);
-  const group = params.get('group');
+  const group = params.get('group') || '';
 
   const elements = {
     refresh: document.getElementById('refresh-button'),
@@ -20,6 +20,7 @@
     activeSection: document.getElementById('active-section'),
     activeCount: document.getElementById('active-count'),
     activeBody: document.getElementById('active-body'),
+    completedBody: document.getElementById('completed-body'),
     empty: document.getElementById('empty-box')
   };
 
@@ -29,33 +30,138 @@
     }
   }
 
-  function showError(message) {
-    if (elements.loading) {
-      elements.loading.hidden = true;
-    }
-
-    if (elements.error) {
-      elements.error.hidden = false;
-      elements.error.textContent = message;
-    }
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
   }
 
-  function render(rows) {
-    if (elements.loading) {
-      elements.loading.hidden = true;
+  function scoreValue(scores, key) {
+    return Number(
+      scores?.[key] ??
+      scores?.[String(key)] ??
+      0
+    );
+  }
+
+  function scoreText(scores, key) {
+    const value = scoreValue(scores, key);
+    return value === 0 ? '-' : String(value);
+  }
+
+  function normalizeRow(row, index) {
+    const scores = row?.scoreCounts || {};
+
+    return {
+      rank: Number(row?.rank || index + 1),
+      name: String(row?.name || '이름 없음'),
+      targetHours: Number(row?.targetHours || 0),
+      progressPercent: Number(row?.progressPercent || 0),
+      scores
+    };
+  }
+
+  function renderTableRow(row, index) {
+    const item = normalizeRow(row, index);
+
+    return `
+      <tr>
+        <td>${item.rank}</td>
+        <td>${escapeHtml(item.name)}</td>
+        <td>${item.targetHours}시간</td>
+        <td>${item.progressPercent}%</td>
+        <td>${scoreText(item.scores, 100)}</td>
+        <td>${scoreText(item.scores, 95)}</td>
+        <td>${scoreText(item.scores, 90)}</td>
+        <td>${scoreText(item.scores, 80)}</td>
+      </tr>
+    `;
+  }
+
+  function renderMobileCard(row, index) {
+    const item = normalizeRow(row, index);
+
+    return `
+      <article class="mobile-board-card">
+        <div class="mobile-board-card-header">
+          <span class="mobile-board-rank">${item.rank}위</span>
+          <span class="mobile-board-name">${escapeHtml(item.name)}</span>
+          <span class="mobile-board-progress">${item.progressPercent}%</span>
+        </div>
+
+        <div class="mobile-board-target">
+          목표 ${item.targetHours}시간
+        </div>
+
+        <div class="mobile-board-info">
+          <div class="mobile-board-score">
+            <span>100점</span>
+            <strong>${scoreText(item.scores, 100)}</strong>
+          </div>
+          <div class="mobile-board-score">
+            <span>95점</span>
+            <strong>${scoreText(item.scores, 95)}</strong>
+          </div>
+          <div class="mobile-board-score">
+            <span>90점</span>
+            <strong>${scoreText(item.scores, 90)}</strong>
+          </div>
+          <div class="mobile-board-score">
+            <span>80점</span>
+            <strong>${scoreText(item.scores, 80)}</strong>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function ensureMobileCards(containerId, tableId) {
+    let cards = document.getElementById(containerId);
+
+    if (cards) {
+      return cards;
     }
 
-    if (elements.title) {
-      elements.title.textContent = '공복 현황판';
+    const table = document.getElementById(tableId);
+
+    if (!table) {
+      return null;
     }
 
-    if (elements.updated) {
-      elements.updated.textContent =
-        '그룹: ' + group + ' · 업데이트: ' +
-        new Date().toLocaleTimeString('ko-KR');
+    cards = document.createElement('div');
+    cards.id = containerId;
+    cards.className = 'mobile-board-cards';
+    table.insertAdjacentElement('afterend', cards);
+
+    return cards;
+  }
+
+  function renderRows(rows) {
+    const safeRows = Array.isArray(rows) ? rows : [];
+
+    if (elements.activeBody) {
+      elements.activeBody.innerHTML = safeRows
+        .map(renderTableRow)
+        .join('');
     }
 
-    if (!rows.length) {
+    const activeCards = ensureMobileCards(
+      'active-mobile-cards',
+      'active-body'
+    );
+
+    if (activeCards) {
+      activeCards.innerHTML = safeRows
+        .map(renderMobileCard)
+        .join('');
+    }
+
+    setText(elements.activeCount, safeRows.length + '명');
+
+    if (!safeRows.length) {
       if (elements.empty) {
         elements.empty.hidden = false;
         elements.empty.textContent = '현재 진행 중인 공복 데이터가 없습니다.';
@@ -75,35 +181,50 @@
     if (elements.activeSection) {
       elements.activeSection.hidden = false;
     }
+  }
 
-    setText(elements.activeCount, rows.length + '명');
+  function renderCompleted(rows) {
+    const safeRows = Array.isArray(rows) ? rows : [];
 
-    if (elements.activeBody) {
-      elements.activeBody.innerHTML = rows.map((row) => {
-        const rank = Number(row.rank || 0);
-        const name = String(row.name || '이름 없음');
-        const target = Number(row.targetHours || 0);
-        const percent = Number(row.progressPercent || 0);
-
-        const scores = row.scoreCounts || {};
-
-        function scoreCell(value) {
-          const count = Number(value || 0);
-          return count === 0 ? '' : String(count);
-        }
-
-        return '<tr>' +
-          '<td>' + rank + '</td>' +
-          '<td>' + name + '</td>' +
-          '<td>' + target + '시간</td>' +
-          '<td>' + percent + '%</td>' +
-          '<td>' + scoreCell(scores[100]) + '</td>' +
-          '<td>' + scoreCell(scores[95]) + '</td>' +
-          '<td>' + scoreCell(scores[90]) + '</td>' +
-          '<td>' + scoreCell(scores[80]) + '</td>' +
-          '</tr>';
-      }).join('');
+    if (elements.completedBody) {
+      elements.completedBody.innerHTML = safeRows
+        .map(renderTableRow)
+        .join('');
     }
+
+    const completedCards = ensureMobileCards(
+      'completed-mobile-cards',
+      'completed-body'
+    );
+
+    if (completedCards) {
+      completedCards.innerHTML = safeRows
+        .map(renderMobileCard)
+        .join('');
+    }
+  }
+
+  function showError(message) {
+    if (elements.loading) {
+      elements.loading.hidden = true;
+    }
+
+    if (elements.error) {
+      elements.error.hidden = false;
+      elements.error.textContent = message;
+    }
+  }
+
+  function readRows(data) {
+    if (Array.isArray(data?.rows)) {
+      return data.rows;
+    }
+
+    if (Array.isArray(data)) {
+      return data;
+    }
+
+    return [];
   }
 
   async function loadBoard() {
@@ -122,18 +243,44 @@
     }
 
     try {
-      const url = '/api/board?group=' + encodeURIComponent(group);
-      const response = await fetch(url, { cache: 'no-store' });
+      const url = '/api/board?group=' +
+        encodeURIComponent(group);
+
+      const response = await fetch(url, {
+        cache: 'no-store'
+      });
+
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || 'HTTP ' + response.status);
       }
 
-      render(Array.isArray(data.rows) ? data.rows : []);
+      const rows = readRows(data);
+
+      renderRows(rows);
+      renderCompleted(
+        Array.isArray(data.completed)
+          ? data.completed
+          : []
+      );
+
+      if (elements.loading) {
+        elements.loading.hidden = true;
+      }
+
+      setText(elements.title, '공복 현황판');
+      setText(
+        elements.updated,
+        '그룹: ' + group + ' · 업데이트: ' +
+        new Date().toLocaleTimeString('ko-KR')
+      );
     } catch (error) {
       console.error('BOARD LOAD ERROR:', error);
-      showError('현황판을 불러오지 못했습니다: ' + error.message);
+      showError(
+        '현황판을 불러오지 못했습니다: ' +
+        error.message
+      );
     }
   }
 

@@ -220,6 +220,126 @@ body {
   }
 }
 </style>
+<style id="mobile-board-cards-style">
+html,
+body {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.mobile-board-cards {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  table.board-table {
+    display: none !important;
+  }
+
+  .mobile-board-cards {
+    display: grid !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    gap: 10px;
+    overflow: hidden !important;
+  }
+
+  .mobile-board-card {
+    display: block;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 12px;
+    border: 1px solid #d9dee7;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden !important;
+  }
+
+  .mobile-board-card-header {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .mobile-board-rank {
+    flex: 0 0 auto;
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  .mobile-board-name {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 700;
+  }
+
+  .mobile-board-progress {
+    flex: 0 0 auto;
+    color: #2563eb;
+    font-weight: 700;
+  }
+
+  .mobile-board-target {
+    margin-bottom: 8px;
+    color: #64748b;
+    font-size: 12px;
+  }
+
+  .mobile-board-info {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    gap: 5px;
+  }
+
+  .mobile-board-score {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 6px 2px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .mobile-board-score span {
+    display: block;
+    font-size: 10px;
+  }
+
+  .mobile-board-score strong {
+    display: block;
+    margin-top: 3px;
+    font-size: 15px;
+  }
+
+  body,
+  main,
+  section,
+  div {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+}
+</style>
 </head>
 
 <body>
