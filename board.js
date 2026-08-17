@@ -1,3 +1,4 @@
+﻿console.log('BOARD JS VERSION: 20260817-1');
 (() => {
   const tg = window.Telegram?.WebApp;
 
@@ -37,7 +38,7 @@
 
   function scoreCell(count) {
     const value = number(count);
-    return value > 0 ? `${value}명` : '-';
+    return value > 0 ? `${value}紐? : '-';
   }
 
   function reviewCell(entry) {
@@ -45,7 +46,7 @@
 
     return `
       <span class="${completed ? 'review-complete' : 'review-pending'}">
-        ${completed ? '완료' : '대기 중'}
+        ${completed ? '?꾨즺' : '?湲?以?}
       </span>
     `;
   }
@@ -60,8 +61,7 @@
 
     return `
       <span class="final-score">
-        ${escapeHtml(entry.selfReviewScore)}점
-      </span>
+        ${escapeHtml(entry.selfReviewScore)}??      </span>
     `;
   }
 
@@ -84,7 +84,7 @@
         <tr>
           <td class="rank-cell">${index + 1}</td>
           <td class="name-cell">${escapeHtml(entry.name)}</td>
-          <td>${number(entry.targetHours)}시간</td>
+          <td>${number(entry.targetHours)}?쒓컙</td>
           <td class="progress-cell">${number(entry.progressPercent)}%</td>
           <td class="score-cell ${scores[100] ? '' : 'empty'}">
             ${scoreCell(scores[100])}
@@ -103,7 +103,7 @@
     }).join('');
 
     if (elements.activeCount) {
-      elements.activeCount.textContent = `${entries.length}명`;
+      elements.activeCount.textContent = `${entries.length}紐?;
     }
 
     if (elements.activeSection) {
@@ -121,7 +121,7 @@
         <tr>
           <td class="rank-cell">${index + 1}</td>
           <td class="name-cell">${escapeHtml(entry.name)}</td>
-          <td>${number(entry.targetHours)}시간</td>
+          <td>${number(entry.targetHours)}?쒓컙</td>
           <td class="score-cell ${scores[100] ? '' : 'empty'}">
             ${scoreCell(scores[100])}
           </td>
@@ -141,7 +141,7 @@
     }).join('');
 
     if (elements.completedCount) {
-      elements.completedCount.textContent = `${entries.length}명`;
+      elements.completedCount.textContent = `${entries.length}紐?;
     }
 
     if (elements.completedSection) {
@@ -151,16 +151,16 @@
 
   function formatUpdatedAt(value) {
     if (!value) {
-      return '업데이트 정보 없음';
+      return '?낅뜲?댄듃 ?뺣낫 ?놁쓬';
     }
 
     const date = new Date(value);
 
     if (Number.isNaN(date.getTime())) {
-      return '업데이트 정보 없음';
+      return '?낅뜲?댄듃 ?뺣낫 ?놁쓬';
     }
 
-    return `업데이트 ${date.toLocaleString('ko-KR', {
+    return `?낅뜲?댄듃 ${date.toLocaleString('ko-KR', {
       timeZone: 'Asia/Seoul',
       month: 'numeric',
       day: 'numeric',
@@ -203,7 +203,7 @@
       const group = state.group || getGroup();
 
       if (!group) {
-        throw new Error('그룹 정보가 없습니다.');
+        throw new Error('洹몃９ ?뺣낫媛 ?놁뒿?덈떎.');
       }
 
       const params = new URLSearchParams();
@@ -222,7 +222,7 @@
 
       if (!response.ok) {
         throw new Error(
-          payload.error || `현황판 API 오류: ${response.status}`
+          payload.error || `?꾪솴??API ?ㅻ쪟: ${response.status}`
         );
       }
 
@@ -233,7 +233,7 @@
       state.group = payload.group || group;
 
       if (elements.title) {
-        elements.title.textContent = `공복 현황판 · ${state.group}`;
+        elements.title.textContent = `怨듬났 ?꾪솴??쨌 ${state.group}`;
       }
 
       if (elements.updated) {
@@ -249,7 +249,7 @@
         elements.empty.hidden = rows.length > 0;
       }
     } catch (error) {
-      console.error('현황판 로드 오류:', error);
+      console.error('?꾪솴??濡쒕뱶 ?ㅻ쪟:', error);
 
       if (elements.activeSection) {
         elements.activeSection.hidden = true;
@@ -264,7 +264,7 @@
       }
 
       setError(
-        error.message || '현황판을 불러오지 못했습니다.'
+        error.message || '?꾪솴?먯쓣 遺덈윭?ㅼ? 紐삵뻽?듬땲??'
       );
     } finally {
       setLoading(false);
