@@ -1,104 +1,34 @@
-﻿console.log('BOARD JS VERSION: 20260817-4');
+﻿console.log('BOARD JS VERSION: 20260817-5');
 
 (() => {
-  const tg = window.Telegram?.WebApp;
-  const state = { group: null, refreshInProgress: false };
+  document.body.innerHTML = '<div id="board-diagnostic" style="font-family: sans-serif; padding: 24px; color: #111; background: #fff; min-height: 100vh; box-sizing: border-box;"><h2>현황판 진단 화면</h2><p>board.js는 실행되었습니다.</p><p id="diag-status">확인 중...</p><pre id="diag-detail" style="white-space: pre-wrap; background: #f3f3f3; padding: 12px;"></pre></div>';
 
-  if (tg) {
-    tg.ready();
-    tg.expand();
-  }
-
+  const status = document.getElementById('diag-status');
+  const detail = document.getElementById('diag-detail');
   const params = new URLSearchParams(window.location.search);
   const group = params.get('group');
-  state.group = group;
 
-  const elements = {
-    refresh: document.getElementById('refresh-button'),
-    board: document.getElementById('board'),
-    status: document.getElementById('status'),
-    group: document.getElementById('group')
-  };
-
-  function show(message) {
-    if (elements.status) {
-      elements.status.textContent = message;
-    }
-
-    if (elements.board && !elements.board.innerHTML.trim()) {
-      elements.board.innerHTML = '<p>' + message + '</p>';
-    }
-  }
-
-  function renderBoard(rows) {
-    if (!elements.board) {
-      show('board 요소를 찾지 못했습니다. board.html의 id를 확인하세요.');
+  async function run() {
+    if (!group) {
+      status.textContent = '오류: URL에 group 값이 없습니다.';
+      detail.textContent = window.location.href;
       return;
     }
 
-    if (!rows.length) {
-      elements.board.innerHTML = '<p>현재 진행 중인 공복 세션이 없습니다.</p>';
-      return;
-    }
-
-    elements.board.innerHTML = rows.map((row, index) => {
-      const name = row.name || '이름 없음';
-      const percent = Number(row.progressPercent ?? 0);
-
-      return '<div class="board-row">' +
-        '<span class="rank">' + (index + 1) + '</span>' +
-        '<span class="name">' + name + '</span>' +
-        '<span class="hours">' + percent + '%</span>' +
-        '</div>';
-    }).join('');
-  }
-
-  async function loadBoard() {
-    if (state.refreshInProgress) {
-      return;
-    }
-
-    state.refreshInProgress = true;
-    show('현황판을 불러오는 중...');
+    const url = '/api/board?group=' + encodeURIComponent(group);
+    detail.textContent = '요청: ' + url;
 
     try {
-      if (!group) {
-        throw new Error(
-          'URL에 group 값이 없습니다. Telegram 버튼의 Web App URL을 확인하세요.'
-        );
-      }
-
-      const url = '/api/board?group=' + encodeURIComponent(group);
-      console.log('BOARD API REQUEST:', url);
-
       const response = await fetch(url, { cache: 'no-store' });
-      const raw = await response.text();
+      const text = await response.text();
 
-      console.log('BOARD API RESPONSE:', response.status, raw);
-
-      if (!response.ok) {
-        throw new Error(
-          'API 오류 HTTP ' + response.status + ': ' + raw.slice(0, 120)
-        );
-      }
-
-      const data = JSON.parse(raw);
-      renderBoard(Array.isArray(data.rows) ? data.rows : []);
-
-      if (elements.status) {
-        elements.status.textContent = '업데이트 완료';
-      }
+      status.textContent = 'API 응답: HTTP ' + response.status;
+      detail.textContent += '\n\n응답:\n' + text;
     } catch (error) {
-      console.error('BOARD LOAD ERROR:', error);
-      show('현황판 오류: ' + error.message);
-    } finally {
-      state.refreshInProgress = false;
+      status.textContent = '네트워크 오류';
+      detail.textContent += '\n\n' + String(error);
     }
   }
 
-  if (elements.refresh) {
-    elements.refresh.addEventListener('click', loadBoard);
-  }
-
-  loadBoard();
+  run();
 })();
