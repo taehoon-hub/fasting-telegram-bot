@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 
 const path = require('path');
 const express = require('express');
@@ -52,7 +52,7 @@ const keyboard = (inline_keyboard) => ({ inline_keyboard });
 function webAppButton(chatId, group) {
   const url = new URL(BOARD_APP_URL);
   url.searchParams.set('chat_id', String(chatId));
-  if (group) url.searchParams.set('group', String(group));
+  url.searchParams.set('group', String(group || '전체'));
   return { text: 'Board', web_app: { url: url.toString() } };
 }
 
