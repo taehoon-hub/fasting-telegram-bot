@@ -79,13 +79,19 @@ function progressMessage(session) {
   return `Fasting in progress.\n\nName: ${session.name}\nGroup: ${session.groupTag}\nGoal: ${session.targetHours} hours\n\nElapsed: ${Math.floor(elapsed / 60)} hours ${elapsed % 60} minutes\n\nRemaining: ${Math.floor(remaining / 60)} hours ${remaining % 60} minutes\n\nNext alert: ${next}`;
 }
 
-async function findSession(chatId) {
-  const snap = await db.collection('liveSessions')
+async function findSession(chatId, userId) {
+  let query = db.collection('liveSessions')
     .where('telegramChatId', '==', String(chatId))
-    .where('status', '==', 'active')
-    .limit(1)
-    .get();
+    .where('status', '==', 'active');
+
+  if (userId !== undefined && userId !== null) {
+    query = query.where('telegramUserId', '==', String(userId));
+  }
+
+  const snap = await query.limit(1).get();
+
   if (snap.empty) return null;
+
   return { id: snap.docs[0].id, ...snap.docs[0].data() };
 }
 
@@ -133,7 +139,7 @@ async function saveTelegramUser(msg) {
 bot.onText(/^\/start$/, async (msg) => {
   try {
     await saveTelegramUser(msg);
-    const existing = await findSession(msg.chat.id);
+    const existing = await findSession(msg.chat.id, msg.from.id);
     if (existing) {
       await bot.sendMessage(msg.chat.id, `An active fasting session exists.\n\nGoal: ${existing.targetHours} hours\n\nContinue?`, {
         reply_markup: keyboard([
@@ -192,7 +198,7 @@ bot.on('callback_query', async (query) => {
     await bot.answerCallbackQuery(query.id);
 
     if (data.startsWith('score_prompt:')) {
-      const session = await findSession(chatId);
+      const session = await findSession(chatId, query.from.id);
       if (!session) return;
 
       await bot.editMessageText(
@@ -209,14 +215,14 @@ bot.on('callback_query', async (query) => {
     if (data.startsWith('score:')) {
       const [, scoreText, sessionId] = data.split(':');
       const score = Number(scoreText);
-      const session = await findSession(chatId);
+      const session = await findSession(chatId, query.from.id);
 
       if (!session || session.id !== sessionId || ![100, 95, 90, 80].includes(score)) {
         return;
       }
 
       const field = `scoreCounts.${score}`;
-      const ref = db.collection('liveSessions').doc(session.id);
+      const ref = db.collection('liveSessions').doc(String(chatId) + '_' + String(query.from.id));
 
       await ref.update({
         [field]: FieldValue.increment(1),
@@ -272,7 +278,7 @@ bot.on('callback_query', async (query) => {
       const startedAt = new Date();
       const targetAt = new Date(startedAt.getTime() + state.targetHours * 60 * 60 * 1000);
       const nextReminderAt = new Date(startedAt.getTime() + FIRST_CHECKIN_MINUTES * 60000);
-      const ref = db.collection('liveSessions').doc(String(chatId));
+      const ref = db.collection('liveSessions').doc(String(chatId) + '_' + String(query.from.id));
 
       await ref.set({
         telegramChatId: String(chatId),
@@ -311,13 +317,13 @@ bot.on('callback_query', async (query) => {
     }
 
     if (data.startsWith('resume:')) {
-      const session = await findSession(chatId);
+      const session = await findSession(chatId, query.from.id);
       if (session) await sendProgress(chatId, session);
       return;
     }
 
     if (data.startsWith('restart:')) {
-      const session = await findSession(chatId);
+      const session = await findSession(chatId, query.from.id);
       if (session) await db.collection('liveSessions').doc(session.id).delete();
       draft.set(String(chatId), { step: 'name' });
       await bot.sendMessage(chatId, 'Starting a new fasting session. Enter name_group.');
@@ -325,13 +331,13 @@ bot.on('callback_query', async (query) => {
     }
 
     if (data.startsWith('progress:')) {
-      const session = await findSession(chatId);
+      const session = await findSession(chatId, query.from.id);
       if (session) await updateMessage(chatId, messageId, session);
       return;
     }
 
     if (data.startsWith('alerts:')) {
-      const session = await findSession(chatId);
+      const session = await findSession(chatId, query.from.id);
       if (!session) return;
       await bot.editMessageReplyMarkup(keyboard([
         [button('30 minutes', `alert:30:${session.id}`), button('1 hour', `alert:60:${session.id}`)],
@@ -343,9 +349,9 @@ bot.on('callback_query', async (query) => {
 
     if (data.startsWith('alert:')) {
       const [, value, sessionId] = data.split(':');
-      const session = await findSession(chatId);
+      const session = await findSession(chatId, query.from.id);
       if (!session || session.id !== sessionId) return;
-      const ref = db.collection('liveSessions').doc(session.id);
+      const ref = db.collection('liveSessions').doc(String(chatId) + '_' + String(query.from.id));
 
       if (value === 'off') {
         await ref.update({ alertsEnabled: false, nextReminderAt: null, updatedAt: FieldValue.serverTimestamp() });
@@ -354,13 +360,13 @@ bot.on('callback_query', async (query) => {
         await ref.update({ alertsEnabled: true, reminderMinutes: minutes, nextReminderAt: new Date(Date.now() + minutes * 60000), updatedAt: FieldValue.serverTimestamp() });
       }
 
-      const updated = await findSession(chatId);
+      const updated = await findSession(chatId, query.from.id);
       await updateMessage(chatId, messageId, updated);
       return;
     }
 
     if (data.startsWith('stop_confirm:')) {
-      const session = await findSession(chatId);
+      const session = await findSession(chatId, query.from.id);
       if (!session) return;
       await bot.editMessageReplyMarkup(keyboard([
         [button('Continue', `resume:${session.id}`)],
@@ -370,7 +376,7 @@ bot.on('callback_query', async (query) => {
     }
 
     if (data.startsWith('stop:')) {
-      const session = await findSession(chatId);
+      const session = await findSession(chatId, query.from.id);
       if (session) await db.collection('liveSessions').doc(session.id).delete();
       await bot.editMessageText('Fasting session ended.', { chat_id: chatId, message_id: messageId });
     }
