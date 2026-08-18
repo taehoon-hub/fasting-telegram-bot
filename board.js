@@ -1,3 +1,4 @@
+console.log('BOARD JS VERSION: 20260819-0135');
 console.log("BOARD JS VERSION: 20260818-reference");
 
 (() => {
@@ -44,7 +45,7 @@ console.log("BOARD JS VERSION: 20260818-reference");
   function normalize(row, index, completed = false) {
     return {
       rank: Number(row?.rank || index + 1),
-      name: String(row?.name || "이름 없음"),
+      name: String(row?.name || "?대쫫 ?놁쓬"),
       targetHours: Number(row?.targetHours || 0),
       progressPercent: Number(
         row?.progressPercent || (completed ? 100 : 0)
@@ -76,8 +77,8 @@ console.log("BOARD JS VERSION: 20260818-reference");
     const item = normalize(row, index, true);
     const review =
       item.selfReviewStatus === "completed"
-        ? `완료${item.selfReviewScore ? ` · ${item.selfReviewScore}점` : ""}`
-        : "대기중";
+        ? `?꾨즺${item.selfReviewScore ? ` 쨌 ${item.selfReviewScore}?? : ""}`
+        : "?湲곗쨷";
 
     return `
       <tr>
@@ -96,18 +97,18 @@ console.log("BOARD JS VERSION: 20260818-reference");
     const item = normalize(row, index, completed);
     const title = completed
       ? escapeHtml(item.name)
-      : `${item.rank}위 · ${escapeHtml(item.name)}`;
+      : `${item.rank}??쨌 ${escapeHtml(item.name)}`;
 
-    const percent = completed ? "달성" : `${item.progressPercent}%`;
+    const percent = completed ? "?ъ꽦" : `${item.progressPercent}%`;
 
     const review = completed
       ? `
         <div class="mobile-card-meta">
-          검수:
+          寃??
           ${
             item.selfReviewStatus === "completed"
-              ? `완료${item.selfReviewScore ? ` · ${item.selfReviewScore}점` : ""}`
-              : "대기중"
+              ? `?꾨즺${item.selfReviewScore ? ` 쨌 ${item.selfReviewScore}?? : ""}`
+              : "?湲곗쨷"
           }
         </div>
       `
@@ -120,7 +121,7 @@ console.log("BOARD JS VERSION: 20260818-reference");
           <span class="mobile-card-percent">${percent}</span>
         </div>
 
-        <div class="mobile-card-meta">목표 ${item.targetHours}시간</div>
+        <div class="mobile-card-meta">紐⑺몴 ${item.targetHours}?쒓컙</div>
         ${review}
 
         <div class="mobile-scores">
@@ -134,12 +135,12 @@ console.log("BOARD JS VERSION: 20260818-reference");
   }
 
   function formatDate(value) {
-    if (!value) return "확인되지 않음";
+    if (!value) return "?뺤씤?섏? ?딆쓬";
 
     const date = new Date(value);
 
     if (Number.isNaN(date.getTime())) {
-      return "확인되지 않음";
+      return "?뺤씤?섏? ?딆쓬";
     }
 
     return date.toLocaleString("ko-KR", {
@@ -157,13 +158,13 @@ console.log("BOARD JS VERSION: 20260818-reference");
       ? data.completed
       : [];
 
-    el.group.textContent = data.group || group || "전체";
+    el.group.textContent = data.group || group || "?꾩껜";
 
     el.updated.textContent =
-      `데이터 기준: ${formatDate(data.generatedAt)} · ` +
-      `다음 갱신: ${formatDate(data.nextRefreshAt)}`;
+      `?곗씠??湲곗?: ${formatDate(data.generatedAt)} 쨌 ` +
+      `?ㅼ쓬 媛깆떊: ${formatDate(data.nextRefreshAt)}`;
 
-    el.activeCount.textContent = `${rows.length}명`;
+    el.activeCount.textContent = `${rows.length}紐?;
 
     el.activeBody.innerHTML = rows
       .map(activeTableRow)
@@ -191,7 +192,7 @@ console.log("BOARD JS VERSION: 20260818-reference");
     if (!group) {
       el.loading.hidden = true;
       el.error.hidden = false;
-      el.error.textContent = "그룹 정보가 없습니다.";
+      el.error.textContent = "洹몃９ ?뺣낫媛 ?놁뒿?덈떎.";
       return;
     }
 
@@ -218,7 +219,7 @@ console.log("BOARD JS VERSION: 20260818-reference");
     } catch (error) {
       el.error.hidden = false;
       el.error.textContent =
-        "현황판을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+        "?꾪솴?먯쓣 遺덈윭?ㅼ? 紐삵뻽?듬땲?? ?좎떆 ???ㅼ떆 ?쒕룄??二쇱꽭??";
       console.error("board load error:", error);
     } finally {
       el.loading.hidden = true;
