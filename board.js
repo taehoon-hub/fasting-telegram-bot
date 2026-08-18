@@ -1,4 +1,4 @@
-console.log('BOARD JS VERSION: 20260818-1');
+console.log('BOARD JS VERSION: 20260818-3');
 
 (() => {
   const tg = window.Telegram?.WebApp;
@@ -11,24 +11,22 @@ console.log('BOARD JS VERSION: 20260818-1');
   const params = new URLSearchParams(window.location.search);
   const group = params.get('group') || '';
 
-  const elements = {
-    refresh: document.getElementById('refresh-button'),
+  const el = {
     title: document.getElementById('board-title'),
+    group: document.getElementById('group-label'),
     updated: document.getElementById('board-updated'),
+    refresh: document.getElementById('refresh-button'),
     loading: document.getElementById('loading-box'),
     error: document.getElementById('error-box'),
-    activeSection: document.getElementById('active-section'),
+    active: document.getElementById('active-section'),
     activeCount: document.getElementById('active-count'),
     activeBody: document.getElementById('active-body'),
+    activeMobile: document.getElementById('active-mobile-list'),
     completedBody: document.getElementById('completed-body'),
+    completedMobile: document.getElementById('completed-mobile-list'),
+    completedEmpty: document.getElementById('completed-empty'),
     empty: document.getElementById('empty-box')
   };
-
-  function setText(element, value) {
-    if (element) {
-      element.textContent = value;
-    }
-  }
 
   function escapeHtml(value) {
     return String(value)
@@ -39,253 +37,223 @@ console.log('BOARD JS VERSION: 20260818-1');
       .replaceAll("'", '&#039;');
   }
 
-  function scoreValue(scores, key) {
-    return Number(
+  function score(scores, key) {
+    const value = Number(
       scores?.[key] ??
       scores?.[String(key)] ??
       0
     );
+
+    return value === 0 ? '0' : String(value);
   }
 
-  function scoreText(scores, key) {
-    const value = scoreValue(scores, key);
-    return value === 0 ? '-' : String(value);
-  }
-
-  function normalizeRow(row, index) {
-    const scores = row?.scoreCounts || {};
-
+  function normalize(row, index) {
     return {
       rank: Number(row?.rank || index + 1),
       name: String(row?.name || '이름 없음'),
       targetHours: Number(row?.targetHours || 0),
       progressPercent: Number(row?.progressPercent || 0),
-      scores
+      scores: row?.scoreCounts || {}
     };
   }
 
-  function renderTableRow(row, index) {
-    const item = normalizeRow(row, index);
+  function tableRow(row, index) {
+    const item = normalize(row, index);
 
     return `
       <tr>
         <td>${item.rank}</td>
         <td>${escapeHtml(item.name)}</td>
-        <td>${item.targetHours}시간</td>
+        <td>${item.targetHours}</td>
         <td>${item.progressPercent}%</td>
-        <td>${scoreText(item.scores, 100)}</td>
-        <td>${scoreText(item.scores, 95)}</td>
-        <td>${scoreText(item.scores, 90)}</td>
-        <td>${scoreText(item.scores, 80)}</td>
+        <td>${score(item.scores, 100)}</td>
+        <td>${score(item.scores, 95)}</td>
+        <td>${score(item.scores, 90)}</td>
+        <td>${score(item.scores, 80)}</td>
       </tr>
     `;
   }
 
-  function renderMobileCard(row, index) {
-    const item = normalizeRow(row, index);
+  function mobileRow(row, index) {
+    const item = normalize(row, index);
 
     return `
-      <article class="mobile-board-card">
-        <div class="mobile-board-card-header">
-          <span class="mobile-board-rank">${item.rank}위</span>
-          <span class="mobile-board-name">${escapeHtml(item.name)}</span>
-          <span class="mobile-board-progress">${item.progressPercent}%</span>
+      <article class="mobile-row">
+        <div class="mobile-row-top">
+          <span class="mobile-rank">${item.rank}위</span>
+          <span class="mobile-name">${escapeHtml(item.name)}</span>
+          <span class="mobile-percent">${item.progressPercent}%</span>
         </div>
 
-        <div class="mobile-board-target">
+        <div class="mobile-target">
           목표 ${item.targetHours}시간
         </div>
 
-        <div class="mobile-board-info">
-          <div class="mobile-board-score">
-            <span>100점</span>
-            <strong>${scoreText(item.scores, 100)}</strong>
+        <div class="mobile-scores">
+          <div class="mobile-score">
+            100
+            <strong>${score(item.scores, 100)}</strong>
           </div>
-          <div class="mobile-board-score">
-            <span>95점</span>
-            <strong>${scoreText(item.scores, 95)}</strong>
+          <div class="mobile-score">
+            95
+            <strong>${score(item.scores, 95)}</strong>
           </div>
-          <div class="mobile-board-score">
-            <span>90점</span>
-            <strong>${scoreText(item.scores, 90)}</strong>
+          <div class="mobile-score">
+            90
+            <strong>${score(item.scores, 90)}</strong>
           </div>
-          <div class="mobile-board-score">
-            <span>80점</span>
-            <strong>${scoreText(item.scores, 80)}</strong>
+          <div class="mobile-score">
+            80
+            <strong>${score(item.scores, 80)}</strong>
           </div>
         </div>
       </article>
     `;
   }
 
-  function ensureMobileCards(containerId, tableId) {
-    let cards = document.getElementById(containerId);
-
-    if (cards) {
-      return cards;
-    }
-
-    const table = document.getElementById(tableId);
-
-    if (!table) {
-      return null;
-    }
-
-    cards = document.createElement('div');
-    cards.id = containerId;
-    cards.className = 'mobile-board-cards';
-    table.insertAdjacentElement('afterend', cards);
-
-    return cards;
-  }
-
-  function renderRows(rows) {
+  function renderActive(rows) {
     const safeRows = Array.isArray(rows) ? rows : [];
 
-    if (elements.activeBody) {
-      elements.activeBody.innerHTML = safeRows
-        .map(renderTableRow)
+    if (el.activeBody) {
+      el.activeBody.innerHTML = safeRows
+        .map(tableRow)
         .join('');
     }
 
-    const activeCards = ensureMobileCards(
-      'active-mobile-cards',
-      'active-body'
-    );
-
-    if (activeCards) {
-      activeCards.innerHTML = safeRows
-        .map(renderMobileCard)
+    if (el.activeMobile) {
+      el.activeMobile.innerHTML = safeRows
+        .map(mobileRow)
         .join('');
     }
 
-    setText(elements.activeCount, safeRows.length + '명');
-
-    if (!safeRows.length) {
-      if (elements.empty) {
-        elements.empty.hidden = false;
-        elements.empty.textContent = '현재 진행 중인 공복 데이터가 없습니다.';
-      }
-
-      if (elements.activeSection) {
-        elements.activeSection.hidden = true;
-      }
-
-      return;
+    if (el.activeCount) {
+      el.activeCount.textContent = ` (${safeRows.length}명)`;
     }
 
-    if (elements.empty) {
-      elements.empty.hidden = true;
+    if (el.active) {
+      el.active.hidden = safeRows.length === 0;
     }
 
-    if (elements.activeSection) {
-      elements.activeSection.hidden = false;
+    if (el.empty) {
+      el.empty.hidden = safeRows.length !== 0;
     }
   }
 
   function renderCompleted(rows) {
     const safeRows = Array.isArray(rows) ? rows : [];
 
-    if (elements.completedBody) {
-      elements.completedBody.innerHTML = safeRows
-        .map(renderTableRow)
+    if (el.completedBody) {
+      el.completedBody.innerHTML = safeRows
+        .map((row, index) => {
+          const item = normalize(row, index);
+
+          return `
+            <tr>
+              <td>${escapeHtml(item.name)}</td>
+              <td>${item.targetHours}</td>
+              <td>${score(item.scores, 100)}</td>
+              <td>${score(item.scores, 95)}</td>
+              <td>${score(item.scores, 90)}</td>
+              <td>${score(item.scores, 80)}</td>
+              <td>-</td>
+            </tr>
+          `;
+        })
         .join('');
     }
 
-    const completedCards = ensureMobileCards(
-      'completed-mobile-cards',
-      'completed-body'
-    );
-
-    if (completedCards) {
-      completedCards.innerHTML = safeRows
-        .map(renderMobileCard)
+    if (el.completedMobile) {
+      el.completedMobile.innerHTML = safeRows
+        .map(mobileRow)
         .join('');
     }
-  }
 
-  function showError(message) {
-    if (elements.loading) {
-      elements.loading.hidden = true;
+    if (el.completedEmpty) {
+      el.completedEmpty.hidden = safeRows.length !== 0;
     }
-
-    if (elements.error) {
-      elements.error.hidden = false;
-      elements.error.textContent = message;
-    }
-  }
-
-  function readRows(data) {
-    if (Array.isArray(data?.rows)) {
-      return data.rows;
-    }
-
-    if (Array.isArray(data)) {
-      return data;
-    }
-
-    return [];
   }
 
   async function loadBoard() {
     if (!group) {
-      showError('그룹 정보가 없습니다.');
+      if (el.error) {
+        el.error.hidden = false;
+        el.error.textContent = '그룹 정보가 없습니다.';
+      }
       return;
     }
 
-    if (elements.loading) {
-      elements.loading.hidden = false;
-      elements.loading.textContent = '현황판을 불러오는 중...';
-    }
-
-    if (elements.error) {
-      elements.error.hidden = true;
+    if (el.loading) {
+      el.loading.hidden = false;
     }
 
     try {
-      const url = '/api/board?group=' +
-        encodeURIComponent(group);
-
-      const response = await fetch(url, {
-        cache: 'no-store'
-      });
+      const response = await fetch(
+        '/api/board?group=' +
+        encodeURIComponent(group),
+        { cache: 'no-store' }
+      );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'HTTP ' + response.status);
+        throw new Error(data.error || `HTTP ${response.status}`);
       }
 
-      const rows = readRows(data);
+      const rows = Array.isArray(data.rows)
+        ? data.rows
+        : [];
 
-      renderRows(rows);
-      renderCompleted(
-        Array.isArray(data.completed)
-          ? data.completed
-          : []
-      );
+      const completed = Array.isArray(data.completed)
+        ? data.completed
+        : [];
 
-      if (elements.loading) {
-        elements.loading.hidden = true;
+      renderActive(rows);
+      renderCompleted(completed);
+
+      if (el.title) {
+        el.title.textContent = '현황판';
       }
 
-      setText(elements.title, '공복 현황판');
-      setText(
-        elements.updated,
-        '그룹: ' + group + ' · 업데이트: ' +
-        new Date().toLocaleTimeString('ko-KR')
-      );
+      if (el.group) {
+        el.group.textContent = group;
+      }
+
+      if (el.updated) {
+        el.updated.textContent =
+          '데이터 기준: ' +
+          new Date().toLocaleDateString('ko-KR', {
+            month: 'numeric',
+            day: 'numeric'
+          }) +
+          ' · 업데이트: ' +
+          new Date().toLocaleTimeString('ko-KR');
+      }
+
+      if (el.loading) {
+        el.loading.hidden = true;
+      }
+
+      if (el.error) {
+        el.error.hidden = true;
+      }
     } catch (error) {
       console.error('BOARD LOAD ERROR:', error);
-      showError(
-        '현황판을 불러오지 못했습니다: ' +
-        error.message
-      );
+
+      if (el.loading) {
+        el.loading.hidden = true;
+      }
+
+      if (el.error) {
+        el.error.hidden = false;
+        el.error.textContent =
+          '현황판을 불러오지 못했습니다: ' +
+          error.message;
+      }
     }
   }
 
-  if (elements.refresh) {
-    elements.refresh.addEventListener('click', loadBoard);
+  if (el.refresh) {
+    el.refresh.addEventListener('click', loadBoard);
   }
 
   loadBoard();
