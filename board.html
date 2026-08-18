@@ -3,33 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>怨듬났留덉뒪???꾪솴??/title>
+  <title>Fasting Master Board</title>
   <link rel="stylesheet" href="/board.css">
 </head>
 <body>
   <main class="board-shell">
     <header class="board-header">
-      <h1>?꾪솴??<span id="group-label">?쒖쿇</span></h1>
-      <p id="board-updated">?곗씠??湲곗?: ?뺤씤 以?..</p>
-      <p class="board-note">?ㅼ떆媛?吏꾪뻾???ы븿 쨌 ?뺢린?먮즺??留ㅼ떆 ?뺢컖怨?30遺꾩뿉 媛깆떊?⑸땲??</p>
-      <button id="refresh-button" class="refresh-button" type="button">理쒖떊 ?뺢린?먮즺 ?뺤씤</button>
+      <h1><span id="board-title"></span> <span id="group-label"></span></h1>
+      <p id="board-updated"></p>
+      <p class="board-note" id="board-note"></p>
+      <button id="refresh-button" class="refresh-button" type="button"></button>
     </header>
 
     <section class="board-card" aria-labelledby="active-title">
-      <h2 id="active-title">?꾩옱 吏꾪뻾 ?쒖쐞 <span id="active-count">0紐?/span></h2>
-
-      <div id="loading-box" class="status-box">?꾪솴?먯쓣 遺덈윭?ㅻ뒗 以?..</div>
+      <h2 id="active-title"><span id="active-title-text"></span> <span id="active-count">0</span></h2>
+      <div id="loading-box" class="status-box"></div>
       <div id="error-box" class="status-box error" hidden></div>
-      <div id="empty-box" class="status-box" hidden>?꾩옱 吏꾪뻾 以묒씤 怨듬났 ?곗씠?곌? ?놁뒿?덈떎.</div>
+      <div id="empty-box" class="status-box" hidden></div>
 
       <div id="active-section" hidden>
         <div class="desktop-table-wrap">
           <table class="board-table">
             <thead>
               <tr>
-                <th>?쒖쐞</th>
-                <th>?대쫫</th>
-                <th>紐⑺몴</th>
+                <th id="th-rank"></th>
+                <th id="th-name"></th>
+                <th id="th-target"></th>
                 <th>%</th>
                 <th>100</th>
                 <th>95</th>
@@ -45,20 +44,20 @@
     </section>
 
     <section class="board-card" aria-labelledby="completed-title">
-      <h2 id="completed-title">怨듬났 紐⑺몴 ?ъ꽦</h2>
-      <p class="section-description">24?쒓컙 ??紐⑺몴 ?ъ꽦?먮? 蹂댁뿬以띾땲??</p>
+      <h2 id="completed-title"></h2>
+      <p class="section-description" id="completed-description"></p>
 
       <div class="desktop-table-wrap">
         <table class="board-table completed-table">
           <thead>
             <tr>
-              <th>?대쫫</th>
-              <th>紐⑺몴</th>
+              <th id="completed-th-name"></th>
+              <th id="completed-th-target"></th>
               <th>100</th>
               <th>95</th>
               <th>90</th>
               <th>80</th>
-              <th>寃??/th>
+              <th id="completed-th-review"></th>
             </tr>
           </thead>
           <tbody id="completed-body"></tbody>
@@ -66,13 +65,52 @@
       </div>
 
       <div id="completed-mobile-list" class="mobile-list"></div>
-      <p id="completed-empty" class="status-box">24?쒓컙 ??紐⑺몴 ?ъ꽦?먭? ?놁뒿?덈떎.</p>
+      <p id="completed-empty" class="status-box"></p>
     </section>
 
-    <button id="back-button" class="back-button" type="button">?뚯븘媛湲?/button>
-      <div id="deployment-version">BOARD DEPLOY VERSION: 20260819-0045</div>
+    <button id="back-button" class="back-button" type="button"></button>
   </main>
 
+  <script>
+    window.BOARD_TEXT = {
+      boardTitle: "\uD604\uD669\uD310",
+      groupChecking: "\uADF8\uB8F9 \uD655\uC778 \uC911",
+      dataChecking: "\uB370\uC774\uD130 \uAE30\uC900: \uD655\uC778 \uC911...",
+      note: "\uC2E4\uC2DC\uAC04 \uC9C4\uD589\uC790 \uD3EC\uD568 \u00B7 \uC815\uAE30\uC790\uB8CC\uB294 \uB9E4\uC2DC \uC815\uAC01\uACFC 30\uBD84\uC5D0 \uAC31\uC2E0\uB429\uB2C8\uB2E4.",
+      refresh: "\uCD5C\uC2E0 \uC815\uAE30\uC790\uB8CC \uD655\uC778",
+      activeTitle: "\uD604\uC7AC \uC9C4\uD589 \uC21C\uC704",
+      people: "\uBA85",
+      loading: "\uD604\uD669\uD310\uC744 \uBD88\uB7EC\uC624\uB294 \uC911...",
+      emptyActive: "\uD604\uC7AC \uC9C4\uD589 \uC911\uC778 \uACF5\uBCF5 \uB370\uC774\uD130\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.",
+      rank: "\uC21C\uC704",
+      name: "\uC774\uB984",
+      target: "\uBAA9\uD45C",
+      completedTitle: "\uACF5\uBCF5 \uBAA9\uD45C \uB2EC\uC131",
+      completedDescription: "24\uC2DC\uAC04 \uB0B4 \uBAA9\uD45C \uB2EC\uC131\uC790\uB97C \uBCF4\uC5EC\uC90\uB2C8\uB2E4.",
+      review: "\uAC80\uC218",
+      completedEmpty: "24\uC2DC\uAC04 \uB0B4 \uBAA9\uD45C \uB2EC\uC131\uC790\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.",
+      back: "\uB3CC\uC544\uAC00\uAE30"
+    };
+
+    document.getElementById("board-title").textContent = window.BOARD_TEXT.boardTitle;
+    document.getElementById("group-label").textContent = window.BOARD_TEXT.groupChecking;
+    document.getElementById("board-updated").textContent = window.BOARD_TEXT.dataChecking;
+    document.getElementById("board-note").textContent = window.BOARD_TEXT.note;
+    document.getElementById("refresh-button").textContent = window.BOARD_TEXT.refresh;
+    document.getElementById("active-title-text").textContent = window.BOARD_TEXT.activeTitle;
+    document.getElementById("loading-box").textContent = window.BOARD_TEXT.loading;
+    document.getElementById("empty-box").textContent = window.BOARD_TEXT.emptyActive;
+    document.getElementById("th-rank").textContent = window.BOARD_TEXT.rank;
+    document.getElementById("th-name").textContent = window.BOARD_TEXT.name;
+    document.getElementById("th-target").textContent = window.BOARD_TEXT.target;
+    document.getElementById("completed-title").textContent = window.BOARD_TEXT.completedTitle;
+    document.getElementById("completed-description").textContent = window.BOARD_TEXT.completedDescription;
+    document.getElementById("completed-th-name").textContent = window.BOARD_TEXT.name;
+    document.getElementById("completed-th-target").textContent = window.BOARD_TEXT.target;
+    document.getElementById("completed-th-review").textContent = window.BOARD_TEXT.review;
+    document.getElementById("completed-empty").textContent = window.BOARD_TEXT.completedEmpty;
+    document.getElementById("back-button").textContent = window.BOARD_TEXT.back;
+  </script>
   <script src="/board.js" defer></script>
 </body>
 </html>
