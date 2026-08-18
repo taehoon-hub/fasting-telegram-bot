@@ -50,8 +50,7 @@ const button = (text, callback_data) => ({ text, callback_data });
 const keyboard = (inline_keyboard) => ({ inline_keyboard });
 
 function webAppButton(chatId, group) {
-  const base = new URL(BOARD_APP_URL);
-  const url = new URL('/board', base.origin);
+  const url = new URL('https://fasting-telegram-bot-production.up.railway.app/board');
   url.searchParams.set('group', String(group || 'all'));
   return {
     text: '현황판',
