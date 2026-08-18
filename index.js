@@ -53,7 +53,7 @@ function webAppButton(chatId, group) {
   const url = new URL(BOARD_APP_URL);
   url.searchParams.set('chat_id', String(chatId));
   url.searchParams.set('group', String(group || 'all'));
-  return { text: 'Board', web_app: { url: url.toString() } };
+  return { text: '현황판', web_app: { url: url.toString() } };
 }
 
 function minutesBetween(a, b) {
