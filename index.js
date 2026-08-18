@@ -52,6 +52,8 @@ const keyboard = (inline_keyboard) => ({ inline_keyboard });
 function webAppButton(chatId, group) {
   const url = new URL('https://fasting-telegram-bot-production.up.railway.app/board');
   url.searchParams.set('group', String(group || 'all'));
+  url.searchParams.set('v', String(Date.now()));
+  console.log('BOARD WEB APP URL:', url.toString());
   return {
     text: '현황판',
     web_app: { url: url.toString() }
