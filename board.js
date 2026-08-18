@@ -1,5 +1,5 @@
 console.log('BOARD JS VERSION: 20260819-0135');
-console.log("BOARD JS VERSION: 20260818-reference");
+console.log('BOARD JS VERSION: 20260819-0135');
 
 (() => {
   const tg = window.Telegram?.WebApp;
@@ -45,7 +45,7 @@ console.log("BOARD JS VERSION: 20260818-reference");
   function normalize(row, index, completed = false) {
     return {
       rank: Number(row?.rank || index + 1),
-      name: String(row?.name || "?대쫫 ?놁쓬"),
+      name: String(row?.name || "??已???곸벉"),
       targetHours: Number(row?.targetHours || 0),
       progressPercent: Number(
         row?.progressPercent || (completed ? 100 : 0)
@@ -77,8 +77,8 @@ console.log("BOARD JS VERSION: 20260818-reference");
     const item = normalize(row, index, true);
     const review =
       item.selfReviewStatus === "completed"
-        ? `?꾨즺${item.selfReviewScore ? ` 쨌 ${item.selfReviewScore}?? : ""}`
-        : "?湲곗쨷";
+        ? `?袁⑥┷${item.selfReviewScore ? ` 夷?${item.selfReviewScore}?? : ""}`
+        : "??疫꿸퀣夷?;
 
     return `
       <tr>
@@ -97,18 +97,18 @@ console.log("BOARD JS VERSION: 20260818-reference");
     const item = normalize(row, index, completed);
     const title = completed
       ? escapeHtml(item.name)
-      : `${item.rank}??쨌 ${escapeHtml(item.name)}`;
+      : `${item.rank}??夷?${escapeHtml(item.name)}`;
 
-    const percent = completed ? "?ъ꽦" : `${item.progressPercent}%`;
+    const percent = completed ? "??苑? : `${item.progressPercent}%`;
 
     const review = completed
       ? `
         <div class="mobile-card-meta">
-          寃??
+          野꺜??
           ${
             item.selfReviewStatus === "completed"
-              ? `?꾨즺${item.selfReviewScore ? ` 쨌 ${item.selfReviewScore}?? : ""}`
-              : "?湲곗쨷"
+              ? `?袁⑥┷${item.selfReviewScore ? ` 夷?${item.selfReviewScore}?? : ""}`
+              : "??疫꿸퀣夷?
           }
         </div>
       `
@@ -121,7 +121,7 @@ console.log("BOARD JS VERSION: 20260818-reference");
           <span class="mobile-card-percent">${percent}</span>
         </div>
 
-        <div class="mobile-card-meta">紐⑺몴 ${item.targetHours}?쒓컙</div>
+        <div class="mobile-card-meta">筌뤴뫚紐?${item.targetHours}??볦퍢</div>
         ${review}
 
         <div class="mobile-scores">
@@ -135,12 +135,12 @@ console.log("BOARD JS VERSION: 20260818-reference");
   }
 
   function formatDate(value) {
-    if (!value) return "?뺤씤?섏? ?딆쓬";
+    if (!value) return "?類ㅼ뵥??? ??놁벉";
 
     const date = new Date(value);
 
     if (Number.isNaN(date.getTime())) {
-      return "?뺤씤?섏? ?딆쓬";
+      return "?類ㅼ뵥??? ??놁벉";
     }
 
     return date.toLocaleString("ko-KR", {
@@ -158,13 +158,13 @@ console.log("BOARD JS VERSION: 20260818-reference");
       ? data.completed
       : [];
 
-    el.group.textContent = data.group || group || "?꾩껜";
+    el.group.textContent = data.group || group || "?袁⑷퍥";
 
     el.updated.textContent =
-      `?곗씠??湲곗?: ${formatDate(data.generatedAt)} 쨌 ` +
-      `?ㅼ쓬 媛깆떊: ${formatDate(data.nextRefreshAt)}`;
+      `?怨쀬뵠??疫꿸퀣?: ${formatDate(data.generatedAt)} 夷?` +
+      `??쇱벉 揶쏄퉮?? ${formatDate(data.nextRefreshAt)}`;
 
-    el.activeCount.textContent = `${rows.length}紐?;
+    el.activeCount.textContent = `${rows.length}筌?;
 
     el.activeBody.innerHTML = rows
       .map(activeTableRow)
@@ -192,7 +192,7 @@ console.log("BOARD JS VERSION: 20260818-reference");
     if (!group) {
       el.loading.hidden = true;
       el.error.hidden = false;
-      el.error.textContent = "洹몃９ ?뺣낫媛 ?놁뒿?덈떎.";
+      el.error.textContent = "域밸챶竊??類ｋ궖揶쎛 ??곷뮸??덈뼄.";
       return;
     }
 
@@ -219,7 +219,7 @@ console.log("BOARD JS VERSION: 20260818-reference");
     } catch (error) {
       el.error.hidden = false;
       el.error.textContent =
-        "?꾪솴?먯쓣 遺덈윭?ㅼ? 紐삵뻽?듬땲?? ?좎떆 ???ㅼ떆 ?쒕룄??二쇱꽭??";
+        "?袁れ넺?癒?뱽 ?븍뜄???? 筌륁궢六??щ빍?? ?醫롫뻻 ????쇰뻻 ??뺣즲??雅뚯눘苑??";
       console.error("board load error:", error);
     } finally {
       el.loading.hidden = true;
