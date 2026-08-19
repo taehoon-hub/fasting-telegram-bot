@@ -1,6 +1,4 @@
-console.log('BOARD JS LIVE ROW FIX: 202608192333');
-console.log('BOARD JS VERSION: 20260819-2315');
-console.log('BOARD JS VERSION: 20260819-2315');
+console.log("BOARD JS LIVE ROW FIX: 202608192352");
 
 (() => {
   const tg = window.Telegram?.WebApp;
@@ -43,13 +41,13 @@ console.log('BOARD JS VERSION: 20260819-2315');
     return Number(scores?.[key] ?? scores?.[String(key)] ?? 0);
   }
 
-  function normalize(row, index, completed = false) {
+  function normalize(row, index, completed) {
     return {
       rank: Number(row?.rank || index + 1),
-      name: String(row?.name || "????????⑤챶苡?),
+      name: String(row?.name || "\uC774\uB984 \uC5C6\uC74C"),
       targetHours: Number(row?.targetHours || 0),
       progressPercent: Number(
-        row?.progressPercent || (completed ? 100 : 0)
+        row?.progressPercent ?? (completed ? 100 : 0)
       ),
       scores: row?.scoreCounts || {},
       selfReviewStatus: row?.selfReviewStatus || null,
@@ -58,7 +56,7 @@ console.log('BOARD JS VERSION: 20260819-2315');
   }
 
   function activeTableRow(row, index) {
-    const item = normalize(row, index);
+    const item = normalize(row, index, false);
 
     return `
       <tr>
@@ -78,8 +76,9 @@ console.log('BOARD JS VERSION: 20260819-2315');
     const item = normalize(row, index, true);
     const review =
       item.selfReviewStatus === "completed"
-        ? `??ш끽維??{item.selfReviewScore ? ` 勇?${item.selfReviewScore}?? : ""}`
-        : "????れ삀?節끹뀋?;
+        ? "\uC644\uB8CC" +
+          (item.selfReviewScore ? ` \u00B7 ${item.selfReviewScore}\uC810` : "")
+        : "\uB300\uAE30\uC911";
 
     return `
       <tr>
@@ -94,22 +93,27 @@ console.log('BOARD JS VERSION: 20260819-2315');
     `;
   }
 
-  function mobileCard(row, index, completed = false) {
+  function mobileCard(row, index, completed) {
     const item = normalize(row, index, completed);
     const title = completed
       ? escapeHtml(item.name)
-      : `${item.rank}??勇?${escapeHtml(item.name)}`;
+      : `${item.rank}\uC704 \u00B7 ${escapeHtml(item.name)}`;
 
-    const percent = completed ? "???? : `${item.progressPercent}%`;
+    const percent = completed
+      ? "\uB2EC\uC131"
+      : `${item.progressPercent}%`;
 
     const review = completed
       ? `
         <div class="mobile-card-meta">
-          ?濡ろ떟???
+          \uAC80\uC218:
           ${
             item.selfReviewStatus === "completed"
-              ? `??ш끽維??{item.selfReviewScore ? ` 勇?${item.selfReviewScore}?? : ""}`
-              : "????れ삀?節끹뀋?
+              ? "\uC644\uB8CC" +
+                (item.selfReviewScore
+                  ? ` \u00B7 ${item.selfReviewScore}\uC810`
+                  : "")
+              : "\uB300\uAE30\uC911"
           }
         </div>
       `
@@ -122,7 +126,10 @@ console.log('BOARD JS VERSION: 20260819-2315');
           <span class="mobile-card-percent">${percent}</span>
         </div>
 
-        <div class="mobile-card-meta">癲ル슢?꾤땟?룹춻?${item.targetHours}??癰???/div>
+        <div class="mobile-card-meta">
+          \uBAA9\uD45C ${item.targetHours}\uC2DC\uAC04
+        </div>
+
         ${review}
 
         <div class="mobile-scores">
@@ -136,12 +143,14 @@ console.log('BOARD JS VERSION: 20260819-2315');
   }
 
   function formatDate(value) {
-    if (!value) return "?嶺뚮Ĳ?됮??? ???怨룹쓱";
+    if (!value) {
+      return "\uD655\uC778\uB418\uC9C0 \uC54A\uC74C";
+    }
 
     const date = new Date(value);
 
     if (Number.isNaN(date.getTime())) {
-      return "?嶺뚮Ĳ?됮??? ???怨룹쓱";
+      return "\uD655\uC778\uB418\uC9C0 \uC54A\uC74C";
     }
 
     return date.toLocaleString("ko-KR", {
@@ -159,46 +168,69 @@ console.log('BOARD JS VERSION: 20260819-2315');
       ? data.completed
       : [];
 
-    el.group.textContent = data.group || group || "??ш끽維??;
+    if (el.group) {
+      el.group.textContent = data.group || group || "\uC804\uCCB4";
+    }
 
-    el.updated.textContent =
-      `???Β??????れ삀??: ${formatDate(data.generatedAt)} 勇?` +
-      `???源낆쓱 ??좊즲??? ${formatDate(data.nextRefreshAt)}`;
+    if (el.updated) {
+      el.updated.textContent =
+        `\uB370\uC774\uD130 \uAE30\uC900: ${formatDate(data.generatedAt)} \u00B7 ` +
+        `\uB2E4\uC74C \uAC31\uC2E0: ${formatDate(data.nextRefreshAt)}`;
+    }
 
-    el.activeCount.textContent = `${rows.length}癲?;
+    if (el.activeCount) {
+      el.activeCount.textContent = `${rows.length}\uBA85`;
+    }
 
-    el.activeBody.innerHTML = rows
-      .map(activeTableRow)
-      .join("");
+    if (el.activeBody) {
+      el.activeBody.innerHTML = rows
+        .map(activeTableRow)
+        .join("");
+    }
 
-    el.activeMobile.innerHTML = rows
-      .map((row, index) => mobileCard(row, index))
-      .join("");
+    if (el.activeMobile) {
+      el.activeMobile.innerHTML = rows
+        .map((row, index) => mobileCard(row, index, false))
+        .join("");
+    }
 
-    el.active.hidden = rows.length === 0;
-    el.empty.hidden = rows.length !== 0;
+    if (el.active) {
+      el.active.hidden = rows.length === 0;
+    }
 
-    el.completedBody.innerHTML = completed
-      .map(completedTableRow)
-      .join("");
+    if (el.empty) {
+      el.empty.hidden = rows.length !== 0;
+    }
 
-    el.completedMobile.innerHTML = completed
-      .map((row, index) => mobileCard(row, index, true))
-      .join("");
+    if (el.completedBody) {
+      el.completedBody.innerHTML = completed
+        .map(completedTableRow)
+        .join("");
+    }
 
-    el.completedEmpty.hidden = completed.length !== 0;
+    if (el.completedMobile) {
+      el.completedMobile.innerHTML = completed
+        .map((row, index) => mobileCard(row, index, true))
+        .join("");
+    }
+
+    if (el.completedEmpty) {
+      el.completedEmpty.hidden = completed.length !== 0;
+    }
   }
 
   async function load() {
     if (!group) {
-      el.loading.hidden = true;
-      el.error.hidden = false;
-      el.error.textContent = "??숆강筌?쓣爾??嶺뚮㉡?€쾮戮る쨬??쎛 ???⑤８?????덊렡.";
+      if (el.loading) el.loading.hidden = true;
+      if (el.error) {
+        el.error.hidden = false;
+        el.error.textContent = "\uADF8\uB8F9 \uC815\uBCF4\uAC00 \uC5C6\uC2B5\uB2C8\uB2E4.";
+      }
       return;
     }
 
-    el.loading.hidden = false;
-    el.error.hidden = true;
+    if (el.loading) el.loading.hidden = false;
+    if (el.error) el.error.hidden = true;
 
     try {
       const response = await fetch(
@@ -216,26 +248,33 @@ console.log('BOARD JS VERSION: 20260819-2315');
       }
 
       const data = await response.json();
+      console.log("BOARD API ROWS:", Array.isArray(data.rows) ? data.rows.length : 0);
       render(data);
     } catch (error) {
-      el.error.hidden = false;
-      el.error.textContent =
-        "??ш낄援????獄???됰씭????? 癲ル슢履뉑쾮?彛?????? ???モ닪筌??????怨뺣빰 ??筌먲퐣?????낆뒩??뗫빝??";
+      if (el.error) {
+        el.error.hidden = false;
+        el.error.textContent =
+          "\uD604\uD669\uD310\uC744 \uBD88\uB7EC\uC624\uC9C0 \uBABB\uD588\uC2B5\uB2C8\uB2E4.";
+      }
       console.error("board load error:", error);
     } finally {
-      el.loading.hidden = true;
+      if (el.loading) el.loading.hidden = true;
     }
   }
 
-  el.refresh?.addEventListener("click", load);
+  if (el.refresh) {
+    el.refresh.addEventListener("click", load);
+  }
 
-  el.back?.addEventListener("click", () => {
-    if (tg?.close) {
-      tg.close();
-    } else {
-      window.history.back();
-    }
-  });
+  if (el.back) {
+    el.back.addEventListener("click", () => {
+      if (tg?.close) {
+        tg.close();
+      } else {
+        window.history.back();
+      }
+    });
+  }
 
   load();
 })();
