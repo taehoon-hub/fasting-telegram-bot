@@ -115,7 +115,7 @@ function webAppButton(chatId, group) {
   url.searchParams.set('v', String(Date.now()));
   console.log('BOARD WEB APP URL:', url.toString());
   return {
-    text: 'Board',
+    text: '\uD604\uD669\uD310',
     web_app: { url: url.toString() }
   };
 }
