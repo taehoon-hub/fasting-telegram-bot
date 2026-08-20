@@ -46,6 +46,66 @@ const db = getFirestore(firebaseApp);
 const bot = new TelegramBot(TOKEN);
 const draft = new Map();
 
+const reminderLock = new Set();
+
+function firestoreMillis(value) {
+  if (!value) return NaN;
+  if (typeof value.toMillis === 'function') return value.toMillis();
+  return new Date(value).getTime();
+}
+
+async function checkDueReminders() {
+  const now = Date.now();
+  const snapshot = await db.collection('liveSessions')
+    .where('status', '==', 'active')
+    .get();
+
+  for (const document of snapshot.docs) {
+    const session = { id: document.id, ...document.data() };
+
+    if (session.alertsEnabled === false) continue;
+    if (reminderLock.has(session.id)) continue;
+
+    const reminderAt = firestoreMillis(session.nextReminderAt);
+    if (!Number.isFinite(reminderAt) || reminderAt > now) continue;
+
+    reminderLock.add(session.id);
+
+    try {
+      const ref = db.collection('liveSessions').doc(session.id);
+
+      if (session.firstCheckDone !== true) {
+        await bot.sendMessage(
+          session.telegramChatId,
+          "\uACF5\uBCF5 \uC2DC\uC791 \uD6C4 \uCCAB \uCCB4\uD06C\uC778 \uC2DC\uAC04\uC785\uB2C8\uB2E4.\n\n" +
+          "\uC9C0\uAE08\uAE4C\uC9C0\uC758 \uACF5\uBCF5 \uC5EC\uC815\uC740 \uC5B4\uB5A0\uC168\uB098\uC694?\n" +
+          "\uD604\uC7AC \uC0C1\uD0DC\uC5D0 \uAC00\uAE4C\uC6B4 \uC810\uC218\uB97C \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.\n\n" +
+          "\uC774 \uC810\uC218\uB294 \uB2E4\uB978 \uC0AC\uB78C\uC744 \uD3C9\uAC00\uD558\uAE30 \uC704\uD55C \uAC83\uC774 \uC544\uB2C8\uB77C, " +
+          "\uBCF8\uC778\uC758 \uACF5\uBCF5 \uAE30\uB85D\uC744 \uC704\uD55C \uAC83\uC785\uB2C8\uB2E4.",
+          {
+            reply_markup: scoreKeyboard(session.id)
+          }
+        );
+
+        await ref.update({
+          firstCheckDone: true,
+          nextReminderAt: null,
+          updatedAt: FieldValue.serverTimestamp()
+        });
+      }
+    } catch (error) {
+      console.error('reminder error:', session.id, error);
+    } finally {
+      reminderLock.delete(session.id);
+    }
+  }
+}
+setInterval(() => {
+  checkDueReminders().catch((error) => {
+    console.error('reminder scheduler error:', error);
+  });
+}, 30000);
+
 const button = (text, callback_data) => ({ text, callback_data });
 const keyboard = (inline_keyboard) => ({ inline_keyboard });
 
@@ -55,7 +115,7 @@ function webAppButton(chatId, group) {
   url.searchParams.set('v', String(Date.now()));
   console.log('BOARD WEB APP URL:', url.toString());
   return {
-    text: '현황판',
+    text: 'Board',
     web_app: { url: url.toString() }
   };
 }
@@ -101,8 +161,14 @@ async function findSession(chatId, userId) {
 
 function scoreKeyboard(sessionId) {
   return keyboard([
-    [button('100', `score:100:${sessionId}`), button('95', `score:95:${sessionId}`)],
-    [button('90', `score:90:${sessionId}`), button('80', `score:80:${sessionId}`)]
+    [
+      button('100', `score:100:${sessionId}`),
+      button('95', `score:95:${sessionId}`)
+    ],
+    [
+      button('90', `score:90:${sessionId}`),
+      button('80', `score:80:${sessionId}`)
+    ]
   ]);
 }
 
