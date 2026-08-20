@@ -225,22 +225,66 @@ button {
 
 @media (max-width: 600px) {
   .board-shell {
-    width: calc(100% - 24px);
-    margin: 12px auto;
-    padding: 22px 18px;
-    border-radius: 24px;
-  }
-
-  .board-card {
-    padding: 20px 16px 16px;
+    width: calc(100% - 16px);
+    margin: 8px auto;
+    padding: 18px 8px;
     border-radius: 20px;
   }
 
+  .board-card {
+    padding: 18px 6px 12px;
+    border-radius: 18px;
+  }
+
   .desktop-table-wrap {
-    display: none;
+    display: block;
+    width: 100%;
+    overflow: visible;
   }
 
   .mobile-list {
-    display: block;
+    display: none !important;
+  }
+
+  .board-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+    font-size: 10px;
+  }
+
+  .board-table th,
+  .board-table td {
+    padding: 8px 1px;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .board-table th:nth-child(1),
+  .board-table td:nth-child(1) {
+    width: 11%;
+  }
+
+  .board-table th:nth-child(2),
+  .board-table td:nth-child(2) {
+    width: 20%;
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+  }
+
+  .board-table th:nth-child(3),
+  .board-table td:nth-child(3) {
+    width: 13%;
+  }
+
+  .board-table th:nth-child(4),
+  .board-table td:nth-child(4) {
+    width: 11%;
+  }
+
+  .board-table th:nth-child(n + 5),
+  .board-table td:nth-child(n + 5) {
+    width: 11.25%;
   }
 }

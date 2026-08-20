@@ -189,9 +189,7 @@ console.log("BOARD JS LIVE ROW FIX: 202608192352");
     }
 
     if (el.activeMobile) {
-      el.activeMobile.innerHTML = rows
-        .map((row, index) => mobileCard(row, index, false))
-        .join("");
+      el.activeMobile.innerHTML = "";
     }
 
     if (el.active) {
@@ -209,9 +207,7 @@ console.log("BOARD JS LIVE ROW FIX: 202608192352");
     }
 
     if (el.completedMobile) {
-      el.completedMobile.innerHTML = completed
-        .map((row, index) => mobileCard(row, index, true))
-        .join("");
+      el.completedMobile.innerHTML = "";
     }
 
     if (el.completedEmpty) {
