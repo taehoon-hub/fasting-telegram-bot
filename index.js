@@ -226,9 +226,9 @@ bot.onText(/^\/start$/, async (msg) => {
     }
 
     draft.set(String(msg.chat.id), {});
-    await bot.sendMessage(msg.chat.id, 'Welcome to the fasting reminder.\n\nWe will track your fasting session and reminders.', {
+    await bot.sendMessage(msg.chat.id, '\uC548\uB155\uD558\uC138\uC694.\n\n\uC5EC\uB7EC\uBD84\uC758 \uACF5\uBCF5 \uC5EC\uC815\uC744 \uD568\uAED8 \uD558\uACA0\uC2B5\uB2C8\uB2E4', {
       reply_markup: keyboard([
-        [button('Start fasting', 'start_fasting')],
+        [button('\uACF5\uBCF5 \uC2DC\uC791', 'start_fasting')],
         [webAppButton(msg.chat.id)],
         [button('Help', 'help')]
       ])
