@@ -443,17 +443,31 @@ bot.on('callback_query', async (query) => {
     if (data.startsWith('stop_confirm:')) {
       const session = await findSession(chatId, query.from.id);
       if (!session) return;
-      await bot.editMessageReplyMarkup(keyboard([
-        [button('Continue', `resume:${session.id}`)],
-        [button('Stop', `stop:${session.id}`)]
-      ]), { chat_id: chatId, message_id: messageId });
+
+      await bot.editMessageReplyMarkup(
+        keyboard([
+          [button('\uACC4\uC18D \uC9C4\uD589', `resume:${session.id}`)],
+          [button('\uACF5\uBCF5\uC911\uC9C0', `stop:${session.id}`)]
+        ]),
+        { chat_id: chatId, message_id: messageId }
+      );
+
       return;
     }
 
     if (data.startsWith('stop:')) {
       const session = await findSession(chatId, query.from.id);
-      if (session) await db.collection('liveSessions').doc(session.id).delete();
-      await bot.editMessageText('Fasting session ended.', { chat_id: chatId, message_id: messageId });
+
+      if (session) {
+        await db.collection('liveSessions').doc(session.id).delete();
+      }
+
+      await bot.editMessageText(
+        '\uACF5\uBCF5 \uC138\uC158\uC744 \uC885\uB8CC\uD588\uC2B5\uB2C8\uB2E4.',
+        { chat_id: chatId, message_id: messageId }
+      );
+
+      return;
     }
   } catch (error) {
     console.error('callback handler error:', error);
