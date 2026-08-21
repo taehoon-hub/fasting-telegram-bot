@@ -308,15 +308,16 @@ bot.on('callback_query', async (query) => {
       });
 
       await bot.editMessageText(
-        'Score saved: ' + score,
+        '\uD604\uC7AC \uC810\uC218 ' + score + '\uC810\uC774 \uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4.\n\n' +
+        '\uB2E4\uC74C \uCCB4\uD06C \uC54C\uB9BC\uC740 \uC5B8\uC81C \uBC1B\uC744\uAE4C\uC694?',
         {
           chat_id: chatId,
           message_id: messageId,
           reply_markup: keyboard([
-            [button('30 min later', `alert:30:${session.id}`)],
-            [button('1 hour later', `alert:60:${session.id}`)],
-            [button('Disable alerts', `alert:off:${session.id}`)],
-            [button('View progress', `progress:${session.id}`)]
+            [button('\u0033\u0030\uBD84 \uD6C4', `alert:30:${session.id}`)],
+            [button('\u0031\uC2DC\uAC04 \uD6C4', `alert:60:${session.id}`)],
+            [button('\u0032\uC2DC\uAC04 \uD6C4', `alert:120:${session.id}`)],
+            [button('\uC54C\uB9BC \uB044\uAE30', `alert:off:${session.id}`)]
           ])
         }
       );
