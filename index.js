@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 
 const path = require('path');
 const express = require('express');
@@ -63,6 +63,39 @@ async function checkDueReminders() {
   for (const document of snapshot.docs) {
     const session = { id: document.id, ...document.data() };
 
+    const targetAtMillis = firestoreMillis(session.targetAt);
+
+    if (
+      Number.isFinite(targetAtMillis) &&
+      targetAtMillis <= now &&
+      session.goalNoticeSent !== true
+    ) {
+      const ref = db.collection('liveSessions').doc(session.id);
+
+      await ref.update({
+        status: 'completed',
+        completionType: 'auto',
+        reviewStatus: 'autoCompleted',
+        completedAt: FieldValue.serverTimestamp(),
+        finalScore: null,
+        goalNoticeSent: true,
+        goalNoticeSentAt: FieldValue.serverTimestamp(),
+        nextReminderAt: null,
+        updatedAt: FieldValue.serverTimestamp()
+      });
+
+      await bot.sendMessage(
+        session.telegramChatId,
+        'Fasting goal reached.\n\n' +
+        'The session was automatically completed.\n' +
+        'Please review your fasting journey and choose a final score.',
+        {
+          reply_markup: scoreKeyboard(session.id)
+        }
+      );
+
+      continue;
+    }
     if (session.alertsEnabled === false) continue;
     if (reminderLock.has(session.id)) continue;
 
@@ -89,6 +122,17 @@ async function checkDueReminders() {
 
         await ref.update({
           firstCheckDone: true,
+          nextReminderAt: null,
+          updatedAt: FieldValue.serverTimestamp()
+        });
+      } else {
+        await bot.sendMessage(
+          session.telegramChatId,
+          'Reminder: please check your current fasting progress and choose a score.',
+          { reply_markup: scoreKeyboard(session.id) }
+        );
+
+        await ref.update({
           nextReminderAt: null,
           updatedAt: FieldValue.serverTimestamp()
         });
@@ -138,7 +182,10 @@ function progressMessage(session) {
   const remaining = Math.max(0, minutesBetween(new Date(), session.targetAt));
   let next = 'Alerts off';
   if (session.alertsEnabled !== false && session.nextReminderAt) {
-    next = `${Math.max(0, minutesBetween(new Date(), session.nextReminderAt))} min`;
+    const reminderDate = session.nextReminderAt?.toDate ? session.nextReminderAt.toDate() : new Date(session.nextReminderAt);
+    const remainingMinutes = Math.max(0, Math.ceil((reminderDate.getTime() - Date.now()) / 60000));
+    const reminderTime = reminderDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+    next = `${reminderTime} (${remainingMinutes}분 후)`;
   }
   return `Fasting in progress.\n\nName: ${session.name}\nGroup: ${session.groupTag}\nGoal: ${session.targetHours} hours\n\nElapsed: ${Math.floor(elapsed / 60)} hours ${elapsed % 60} minutes\n\nRemaining: ${Math.floor(remaining / 60)} hours ${remaining % 60} minutes\n\nNext alert: ${next}`;
 }
@@ -296,8 +343,35 @@ bot.on('callback_query', async (query) => {
         return;
       }
 
+      const ref = db.collection('liveSessions').doc(session.id);
+
+      if (
+        session.status === 'completed' &&
+        session.reviewStatus === 'autoCompleted'
+      ) {
+        await ref.update({
+          finalScore: score,
+          reviewStatus: 'reviewCompleted',
+          reviewedAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp()
+        });
+
+        await bot.editMessageText(
+          'Final score ' + score + ' saved. Review complete.',
+          {
+            chat_id: chatId,
+            message_id: messageId
+          }
+        );
+
+        return;
+      }
+
+      if (session.status !== 'active') {
+        return;
+      }
+
       const field = `scoreCounts.${score}`;
-      const ref = db.collection('liveSessions').doc(String(chatId) + '_' + String(query.from.id));
 
       await ref.update({
         [field]: FieldValue.increment(1),
@@ -307,97 +381,39 @@ bot.on('callback_query', async (query) => {
         updatedAt: FieldValue.serverTimestamp()
       });
 
+      const checkedAt = new Date();
+      const checkInId = `${session.id}_${checkedAt.getTime()}`;
+
+      await db.collection('checkIns').doc(checkInId).set({
+        telegramChatId: session.telegramChatId,
+        telegramUserId: session.telegramUserId,
+        sessionId: session.id,
+        name: session.name,
+        groupTag: session.groupTag,
+        sessionStartedAt: session.startedAt,
+        checkedAt,
+        score,
+        stage: session.firstCheckDone === true ? 'repeat' : 'first',
+        nextCheckAt: null,
+        createdAt: FieldValue.serverTimestamp()
+      });
+
       await bot.editMessageText(
-        '\uD604\uC7AC \uC810\uC218 ' + score + '\uC810\uC774 \uC800\uC7A5\uB418\uC5C8\uC2B5\uB2C8\uB2E4.\n\n' +
-        '\uB2E4\uC74C \uCCB4\uD06C \uC54C\uB9BC\uC740 \uC5B8\uC81C \uBC1B\uC744\uAE4C\uC694?',
+        'Current score ' + score + ' saved.',
         {
           chat_id: chatId,
           message_id: messageId,
           reply_markup: keyboard([
-            [button('\u0033\u0030\uBD84 \uD6C4', `alert:30:${session.id}`)],
-            [button('\u0031\uC2DC\uAC04 \uD6C4', `alert:60:${session.id}`)],
-            [button('\u0032\uC2DC\uAC04 \uD6C4', `alert:120:${session.id}`)],
-            [button('\uC54C\uB9BC \uB044\uAE30', `alert:off:${session.id}`)]
+            [button('30 minutes', `alert:30:${session.id}`)],
+            [button('1 hour', `alert:60:${session.id}`)],
+            [button('2 hours', `alert:120:${session.id}`)],
+            [button('Turn off alerts', `alert:off:${session.id}`)]
           ])
         }
       );
+
       return;
     }
-    if (data === 'help') {
-      await bot.sendMessage(chatId, 'Choose a fasting duration to record your session and reminders.');
-      return;
-    }
-
-    if (data === 'start_fasting') {
-      state.step = 'name';
-      draft.set(String(chatId), state);
-      await bot.sendMessage(chatId, 'Enter the display name in name_group format. Example: Messi_Seoul');
-      return;
-    }
-
-    if (data.startsWith('target:')) {
-      state.targetHours = Number(data.split(':')[1]);
-      state.step = 'confirm';
-      draft.set(String(chatId), state);
-      await bot.editMessageText(`Name: ${state.name}\nGroup: ${state.groupTag}\nGoal: ${state.targetHours} hours\n\nStart fasting?`, {
-        chat_id: chatId,
-        message_id: messageId,
-        reply_markup: keyboard([
-          [button('Start', 'confirm_start')],
-          [button('Edit name', 'start_fasting')]
-        ])
-      });
-      return;
-    }
-
-    if (data === 'confirm_start') {
-      const startedAt = new Date();
-      const targetAt = new Date(startedAt.getTime() + state.targetHours * 60 * 60 * 1000);
-      const nextReminderAt = new Date(startedAt.getTime() + FIRST_CHECKIN_MINUTES * 60000);
-      const ref = db.collection('liveSessions').doc(String(chatId) + '_' + String(query.from.id));
-
-      await ref.set({
-        telegramChatId: String(chatId),
-        telegramUserId: String(query.from.id),
-        name: state.name,
-        groupTag: state.groupTag,
-        targetHours: state.targetHours,
-        startedAt,
-        targetAt,
-        expiresAt: targetAt,
-        status: 'active',
-        firstCheckDone: false,
-        scoreCounts: {
-          100: 0,
-          95: 0,
-          90: 0,
-          80: 0
-        },
-        scoreCheckCount: 0,
-        lastScore: null,
-        lastScoreAt: null,
-        alertsEnabled: true,
-        reminderMinutes: FIRST_CHECKIN_MINUTES,
-        nextReminderAt,
-        updatedAt: FieldValue.serverTimestamp()
-      });
-
-      const session = { id: ref.id, ...(await ref.get()).data() };
-      draft.delete(String(chatId));
-      await bot.editMessageText(progressMessage(session), {
-        chat_id: chatId,
-        message_id: messageId,
-        reply_markup: sessionKeyboard(chatId, session)
-      });
-      return;
-    }
-
-    if (data.startsWith('resume:')) {
-      const session = await findSession(chatId, query.from.id);
-      if (session) await sendProgress(chatId, session);
-      return;
-    }
-
     if (data.startsWith('restart:')) {
       const session = await findSession(chatId, query.from.id);
       if (session) await db.collection('liveSessions').doc(session.id).delete();
@@ -477,6 +493,106 @@ bot.on('callback_query', async (query) => {
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
+function toMillis(value) {
+  if (!value) return NaN;
+  if (typeof value.toMillis === 'function') return value.toMillis();
+  return new Date(value).getTime();
+}
+
+function boardScoreCounts(session) {
+  return {
+    100: Number(session.scoreCounts?.['100'] ?? session.scoreCounts?.[100] ?? 0),
+    95: Number(session.scoreCounts?.['95'] ?? session.scoreCounts?.[95] ?? 0),
+    90: Number(session.scoreCounts?.['90'] ?? session.scoreCounts?.[90] ?? 0),
+    80: Number(session.scoreCounts?.['80'] ?? session.scoreCounts?.[80] ?? 0)
+  };
+}
+
+function completionSection(session) {
+  if (session.status !== 'completed') return null;
+
+  const reviewed = session.reviewStatus === 'reviewCompleted';
+
+  return {
+    reviewStatus: reviewed ? 'reviewCompleted' : 'autoCompleted',
+    finalScore: reviewed ? Number(session.finalScore) : null
+  };
+}
+
+async function buildBoardSnapshot(group) {
+  const snap = await db.collection('liveSessions')
+    .where('groupTag', '==', group)
+    .get();
+
+  const now = Date.now();
+  const activeRows = [];
+  const completedRows = [];
+
+  for (const doc of snap.docs) {
+    const session = { id: doc.id, ...doc.data() };
+
+    if (session.status === 'active') {
+      const expires = toMillis(session.expiresAt);
+
+      if (Number.isFinite(expires) && expires <= now) continue;
+
+      activeRows.push({
+        id: session.id,
+        name: session.name,
+        targetHours: session.targetHours,
+        progressPercent: percent(session),
+        scoreCounts: boardScoreCounts(session)
+      });
+
+      continue;
+    }
+
+    if (session.status === 'completed') {
+      const completedAt = toMillis(session.completedAt);
+
+      if (
+        Number.isFinite(completedAt) &&
+        now - completedAt <= 24 * 60 * 60 * 1000
+      ) {
+        completedRows.push({
+          id: session.id,
+          name: session.name,
+          targetHours: session.targetHours,
+          scoreCounts: {
+            100: '',
+            95: '',
+            90: '',
+            80: ''
+          },
+          completionSection: completionSection(session)
+        });
+      }
+    }
+  }
+
+  activeRows.sort((a, b) => b.progressPercent - a.progressPercent);
+  completedRows.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+
+  const rows = [
+    ...activeRows.map((row, index) => ({
+      ...row,
+      rank: index + 1,
+      section: 'active'
+    })),
+    ...completedRows.map((row) => ({
+      ...row,
+      rank: null,
+      section: 'goalAchieved'
+    }))
+  ];
+
+  await db.collection('boardSnapshots').doc(group).set({
+    group,
+    rows,
+    lastUpdatedAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp()
+  }, { merge: true });
+}
 app.get('/board.js', (_req, res) => {
   res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   res.type('application/javascript');
@@ -495,40 +611,32 @@ app.get('/board', (_req, res) => {
 });
 
 app.get('/api/board', async (req, res) => {
-  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.set('Cache-Control', 'public, max-age=60, s-maxage=60');
 
   try {
     const group = String(req.query.group || '');
-    if (!group) return res.status(400).json({ error: 'group query parameter is required' });
+    if (!group) {
+      return res.status(400).json({
+        error: 'group query parameter is required'
+      });
+    }
 
-    const snap = await db.collection('liveSessions')
-      .where('groupTag', '==', group)
-      .where('status', '==', 'active')
-      .get();
+    const snapshotRef = db.collection('boardSnapshots').doc(group);
+    const snapshotDoc = await snapshotRef.get();
 
-    const now = Date.now();
-    const rows = snap.docs
-      .map((doc) => ({ id: doc.id, ...doc.data() }))
-      .filter((session) => {
-        const expires = session.expiresAt?.toMillis ? session.expiresAt.toMillis() : new Date(session.expiresAt).getTime();
-        return !Number.isFinite(expires) || expires > now;
-      })
-      .sort((a, b) => percent(b) - percent(a));
+    if (!snapshotDoc.exists) {
+      return res.status(404).json({
+        error: 'Board snapshot is not ready yet.',
+        group
+      });
+    }
+
+    const snapshot = snapshotDoc.data();
 
     res.json({
       group,
-      rows: rows.map((session, index) => ({
-        rank: index + 1,
-        name: session.name,
-        targetHours: session.targetHours,
-        progressPercent: percent(session),
-        scoreCounts: {
-          100: Number(session.scoreCounts?.['100'] ?? session.scoreCounts?.[100] ?? 0),
-          95: Number(session.scoreCounts?.['95'] ?? session.scoreCounts?.[95] ?? 0),
-          90: Number(session.scoreCounts?.['90'] ?? session.scoreCounts?.[90] ?? 0),
-          80: Number(session.scoreCounts?.['80'] ?? session.scoreCounts?.[80] ?? 0)
-        }
-      }))
+      lastUpdatedAt: snapshot.lastUpdatedAt || null,
+      rows: Array.isArray(snapshot.rows) ? snapshot.rows : []
     });
   } catch (error) {
     console.error('/api/board error:', error);
@@ -536,6 +644,69 @@ app.get('/api/board', async (req, res) => {
   }
 });
 
+async function getBoardGroups() {
+  const snap = await db.collection('liveSessions')
+    .select('groupTag')
+    .get();
+
+  return [...new Set(
+    snap.docs
+      .map((doc) => doc.data().groupTag)
+      .filter((group) => group)
+      .map((group) => String(group))
+  )];
+}
+
+async function refreshBoardSnapshots() {
+  try {
+    const groups = await getBoardGroups();
+
+    for (const group of groups) {
+      await buildBoardSnapshot(group);
+    }
+
+    console.log(
+      `Board snapshots refreshed: ${groups.length} group(s)`
+    );
+  } catch (error) {
+    console.error('board snapshot refresh error:', error);
+  }
+}
+
+function millisecondsUntilNextHalfHour() {
+  const now = new Date();
+  const next = new Date(now);
+
+  next.setSeconds(0, 0);
+
+  if (now.getMinutes() < 30) {
+    next.setMinutes(30);
+  } else {
+    next.setMinutes(60);
+  }
+
+  return Math.max(1000, next.getTime() - now.getTime());
+}
+
+function startBoardSnapshotScheduler() {
+  const firstDelay = millisecondsUntilNextHalfHour();
+
+  setTimeout(() => {
+    refreshBoardSnapshots().catch((error) => {
+      console.error('initial board snapshot refresh error:', error);
+    });
+
+    setInterval(() => {
+      refreshBoardSnapshots().catch((error) => {
+        console.error('scheduled board snapshot refresh error:', error);
+      });
+    }, BOARD_SNAPSHOT_MINUTES * 60 * 1000);
+  }, firstDelay);
+
+  console.log(
+    `Board snapshot scheduler starts in ${Math.ceil(firstDelay / 1000)} seconds`
+  );
+}
 app.post('/telegram/webhook', (req, res) => {
   const receivedSecret = req.get('X-Telegram-Bot-Api-Secret-Token');
   if (receivedSecret !== TELEGRAM_WEBHOOK_SECRET) return res.sendStatus(403);
@@ -554,4 +725,6 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('Webhook endpoint: /telegram/webhook');
   console.log(`First check-in reminder: ${FIRST_CHECKIN_MINUTES} minutes`);
   console.log(`Board snapshot interval: ${BOARD_SNAPSHOT_MINUTES} minutes`);
+  startBoardSnapshotScheduler();
 });
+
