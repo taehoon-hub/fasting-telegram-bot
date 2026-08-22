@@ -184,7 +184,7 @@ function progressMessage(session) {
   if (session.alertsEnabled !== false && session.nextReminderAt) {
     const reminderDate = session.nextReminderAt?.toDate ? session.nextReminderAt.toDate() : new Date(session.nextReminderAt);
     const remainingMinutes = Math.max(0, Math.ceil((reminderDate.getTime() - Date.now()) / 60000));
-    const reminderTime = reminderDate.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const reminderTime = reminderDate.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
     next = `${reminderTime} (${remainingMinutes}분 후)`;
   }
   return `Fasting in progress.\n\nName: ${session.name}\nGroup: ${session.groupTag}\nGoal: ${session.targetHours} hours\n\nElapsed: ${Math.floor(elapsed / 60)} hours ${elapsed % 60} minutes\n\nRemaining: ${Math.floor(remaining / 60)} hours ${remaining % 60} minutes\n\nNext alert: ${next}`;
@@ -727,4 +727,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Board snapshot interval: ${BOARD_SNAPSHOT_MINUTES} minutes`);
   startBoardSnapshotScheduler();
 });
+
 
