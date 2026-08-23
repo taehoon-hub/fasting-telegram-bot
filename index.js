@@ -86,9 +86,9 @@ async function checkDueReminders() {
 
       await bot.sendMessage(
         session.telegramChatId,
-        'Fasting goal reached.\n\n' +
+        '공복 목표에 도달했습니다.\n\n' +
         'The session was automatically completed.\n' +
-        'Please review your fasting journey and choose a final score.',
+        '공복 기록을 확인하고 최종 점수를 선택해 주세요.',
         {
           reply_markup: scoreKeyboard(session.id)
         }
@@ -148,7 +148,7 @@ async function checkDueReminders() {
       } else {
         await bot.sendMessage(
           session.telegramChatId,
-          'Reminder: please check your current fasting progress and choose a score.',
+          '현재 공복 상태를 확인하고 점수를 선택해 주세요.',
           { reply_markup: scoreKeyboard(session.id) }
         );
 
@@ -192,16 +192,16 @@ function percent(session) {
 }
 
 function progressMessage(session) {
-  const elapsed = minutesBetween(session.startedAt, new Date());
-  const remaining = Math.max(0, minutesBetween(new Date(), session.targetAt));
-  let next = 'Alerts off';
+  const elapsed =minutesBetween(session.startedAt, new Date());
+  const remaining = Math.max(0,minutesBetween(new Date(), session.targetAt));
+  let next = '알림 꺼짐';
   if (session.alertsEnabled !== false && session.nextReminderAt) {
     const reminderDate = session.nextReminderAt?.toDate ? session.nextReminderAt.toDate() : new Date(session.nextReminderAt);
     const remainingMinutes = Math.max(0, Math.ceil((reminderDate.getTime() - Date.now()) / 60000));
     const reminderTime = reminderDate.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-    next = `${reminderTime} (${remainingMinutes}????`;
+    next = `${reminderTime} (${remainingMinutes}분 후)`;
   }
-  return `Fasting in progress.\n\nName: ${session.name}\nGroup: ${session.groupTag}\nGoal: ${session.targetHours} hours\n\nElapsed: ${Math.floor(elapsed / 60)} hours ${elapsed % 60} minutes\n\nRemaining: ${Math.floor(remaining / 60)} hours ${remaining % 60} minutes\n\nNext alert: ${next}`;
+  return `공복 진행 중입니다.\n\n이름: ${session.name}\n그룹: ${session.groupTag}\n목표: ${session.targetHours} hours\n\n경과 시간: ${Math.floor(elapsed / 60)}시간 ${elapsed % 60}분\n\n남은 시간: ${Math.floor(remaining / 60)}시간 ${remaining % 60}분\n\n다음 알림: ${next}`;
 }
 
 async function findSession(chatId, userId) {
@@ -281,10 +281,10 @@ bot.onText(/^\/start$/, async (msg) => {
     await saveTelegramUser(msg);
     const existing = await findSession(msg.chat.id, msg.from.id);
     if (existing) {
-      await bot.sendMessage(msg.chat.id, `An active fasting session exists.\n\nGoal: ${existing.targetHours} hours\n\nContinue?`, {
+      await bot.sendMessage(msg.chat.id, `진행 중인 공복 세션이 있습니다.\n\n목표: ${existing.targetHours}시간\n\n계속 진행할까요?`, {
         reply_markup: keyboard([
-          [button('Continue', `resume:${existing.id}`)],
-          [button('Stop and restart', `restart:${existing.id}`)]
+          [button('계속 진행', `resume:${existing.id}`)],
+          [button('중지하고 다시 시작', `restart:${existing.id}`)]
         ])
       });
       return;
@@ -295,7 +295,7 @@ bot.onText(/^\/start$/, async (msg) => {
       reply_markup: keyboard([
         [button('\uACF5\uBCF5 \uC2DC\uC791', 'start_fasting')],
         [webAppButton(msg.chat.id)],
-        [button('Help', 'help')]
+        [button('도움말', 'help')]
       ])
     });
   } catch (error) {
@@ -310,7 +310,7 @@ bot.on('message', async (msg) => {
 
   const parts = msg.text.trim().split('_');
   if (parts.length < 2 || !parts.at(-1) || !parts.slice(0, -1).join('_')) {
-    await bot.sendMessage(msg.chat.id, 'Please enter the format name_group. Example: Messi_Seoul');
+    await bot.sendMessage(msg.chat.id, '이름_그룹 형식으로 입력해 주세요. 예: 메시_경기');
     return;
   }
 
@@ -319,11 +319,11 @@ bot.on('message', async (msg) => {
   state.step = 'target';
   draft.set(String(msg.chat.id), state);
 
-  await bot.sendMessage(msg.chat.id, `Name: ${state.name}\nGroup: ${state.groupTag}\n\nChoose fasting duration.`, {
+  await bot.sendMessage(msg.chat.id, `이름: ${state.name}\n그룹: ${state.groupTag}\n\n공복 시간을 선택해 주세요.`, {
     reply_markup: keyboard([
-      [button('12 hours', 'target:12'), button('14 hours', 'target:14')],
-      [button('16 hours', 'target:16'), button('18 hours', 'target:18')],
-      [button('20 hours', 'target:20')]
+      [button('12시간', 'target:12'), button('14시간', 'target:14')],
+      [button('16시간', 'target:16'), button('18시간', 'target:18')],
+      [button('20시간', 'target:20')]
     ])
   });
 });
@@ -355,7 +355,7 @@ bot.on('callback_query', async (query) => {
       if (!name || !groupTag) {
         await bot.sendMessage(
           chatId,
-          '?대쫫怨?洹몃９ ?뺣낫媛 ?놁뒿?덈떎. /start瑜??ㅼ떆 ?ㅽ뻾??二쇱꽭??'
+          '이름과 그룹 정보가 없습니다. /start를 다시 실행해 주세요.'
         );
         return;
       }
@@ -363,7 +363,7 @@ bot.on('callback_query', async (query) => {
       if (name.length > 40 || groupTag.length > 30) {
         await bot.sendMessage(
           chatId,
-          '?대쫫 ?먮뒗 洹몃９紐낆씠 ?덈Т 源곷땲??'
+          '이름 또는 그룹명이 너무 깁니다.'
         );
         return;
       }
@@ -435,7 +435,7 @@ bot.on('callback_query', async (query) => {
         draft.delete(String(chatId));
 
         await bot.editMessageText(
-          `怨듬났???쒖옉?덉뒿?덈떎.\n\n?대쫫: ${name}\n洹몃９: ${groupTag}\n紐⑺몴: ${targetHours}?쒓컙`,
+          `공복이 시작되었습니다.\n\n이름: ${name}\n그룹: ${groupTag}\n목표: ${targetHours}시간`,
           {
             chat_id: chatId,
             message_id: messageId,
@@ -449,18 +449,18 @@ bot.on('callback_query', async (query) => {
         if (error.message === 'DUPLICATE_NAME') {
           await bot.sendMessage(
             chatId,
-            `洹몃９ '${groupTag}'??媛숈? ?대쫫???대? ?깅줉?섏뼱 ?덉뒿?덈떎. ?ㅻⅨ ?대쫫???낅젰??二쇱꽭??`
+            `그룹 '${groupTag}'에 같은 이름이 이미 등록되어 있습니다. 다른 이름을 입력해 주세요.`
           );
         } else if (error.message === 'GROUP_FULL') {
           await bot.sendMessage(
             chatId,
-            `洹몃９ '${groupTag}'? ?꾩옱 30紐낆쑝濡?媛??李쇱뒿?덈떎. ?ㅻⅨ 洹몃９???낅젰??二쇱꽭??`
+            `그룹 '${groupTag}'은 현재 30명으로 가득 찼습니다. 다른 그룹을 입력해 주세요.`
           );
         } else {
           console.error('session registration error:', error);
           await bot.sendMessage(
             chatId,
-            '怨듬났 ?쒖옉 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎. ?좎떆 ???ㅼ떆 ?쒕룄??二쇱꽭??'
+            '공복을 시작하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
           );
         }
       }
@@ -473,7 +473,7 @@ bot.on('callback_query', async (query) => {
 
       await bot.sendMessage(
         chatId,
-        '?대쫫怨?洹몃９???낅젰??二쇱꽭??\n?? 湲몃룞_?ъ닔'
+        '이름과 그룹을 입력해 주세요.\n예: 메시_경기'
       );
 
       return;
@@ -482,7 +482,7 @@ bot.on('callback_query', async (query) => {
     if (data === 'help') {
       await bot.sendMessage(
         chatId,
-        '?ъ슜 諛⑸쾿\n\n1. 怨듬났 ?쒖옉???꾨쫭?덈떎.\n2. ?대쫫_洹몃９ ?뺤떇?쇰줈 ?낅젰?⑸땲??\n3. ?⑥떇 ?쒓컙???좏깮?⑸땲??'
+        '사용 방법\n\n1. 공복 시작 버튼을 누릅니다.\n2. 이름_그룹 형식으로 입력합니다.\n3. 공복 시간을 선택합니다.'
       );
 
       return;
@@ -501,7 +501,7 @@ bot.on('callback_query', async (query) => {
       if (!name || !groupTag) {
         await bot.sendMessage(
           chatId,
-          '?대쫫怨?洹몃９ ?뺣낫媛 ?놁뒿?덈떎. /start瑜??ㅼ떆 ?ㅽ뻾??二쇱꽭??'
+          '이름과 그룹 정보가 없습니다. /start를 다시 실행해 주세요.'
         );
         return;
       }
@@ -573,7 +573,7 @@ bot.on('callback_query', async (query) => {
         draft.delete(String(chatId));
 
         await bot.editMessageText(
-          `怨듬났???쒖옉?덉뒿?덈떎.\n\n?대쫫: ${name}\n洹몃９: ${groupTag}\n紐⑺몴: ${targetHours}?쒓컙`,
+          `공복이 시작되었습니다.\n\n이름: ${name}\n그룹: ${groupTag}\n목표: ${targetHours}시간`,
           {
             chat_id: chatId,
             message_id: messageId,
@@ -587,18 +587,18 @@ bot.on('callback_query', async (query) => {
         if (error.message === 'DUPLICATE_NAME') {
           await bot.sendMessage(
             chatId,
-            `洹몃９ '${groupTag}'??媛숈? ?대쫫???대? ?깅줉?섏뼱 ?덉뒿?덈떎. ?ㅻⅨ ?대쫫???낅젰??二쇱꽭??`
+            `그룹 '${groupTag}'에 같은 이름이 이미 등록되어 있습니다. 다른 이름을 입력해 주세요.`
           );
         } else if (error.message === 'GROUP_FULL') {
           await bot.sendMessage(
             chatId,
-            `洹몃９ '${groupTag}'? ?꾩옱 30紐낆쑝濡?媛??李쇱뒿?덈떎. ?ㅻⅨ 洹몃９???낅젰??二쇱꽭??`
+            `그룹 '${groupTag}'은 현재 30명으로 가득 찼습니다. 다른 그룹을 입력해 주세요.`
           );
         } else {
           console.error('session registration error:', error);
           await bot.sendMessage(
             chatId,
-            '怨듬났 ?쒖옉 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎. ?좎떆 ???ㅼ떆 ?쒕룄??二쇱꽭??'
+            '공복을 시작하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
           );
         }
       }
@@ -619,7 +619,7 @@ bot.on('callback_query', async (query) => {
       if (!name || !groupTag) {
         await bot.sendMessage(
           chatId,
-          '?대쫫怨?洹몃９ ?뺣낫媛 ?놁뒿?덈떎. /start瑜??ㅼ떆 ?ㅽ뻾??二쇱꽭??'
+          '이름과 그룹 정보가 없습니다. /start를 다시 실행해 주세요.'
         );
         return;
       }
@@ -689,7 +689,7 @@ bot.on('callback_query', async (query) => {
         draft.delete(String(chatId));
 
         await bot.editMessageText(
-          `怨듬났???쒖옉?덉뒿?덈떎.\n\n?대쫫: ${name}\n洹몃９: ${groupTag}\n紐⑺몴: ${targetHours}?쒓컙`,
+          `공복이 시작되었습니다.\n\n이름: ${name}\n그룹: ${groupTag}\n목표: ${targetHours}시간`,
           {
             chat_id: chatId,
             message_id: messageId,
@@ -705,18 +705,18 @@ bot.on('callback_query', async (query) => {
         if (error.message === 'DUPLICATE_NAME') {
           await bot.sendMessage(
             chatId,
-            `洹몃９ '${groupTag}'??媛숈? ?대쫫???대? ?깅줉?섏뼱 ?덉뒿?덈떎.`
+            `그룹 '${groupTag}'에 같은 이름이 이미 등록되어 있습니다.`
           );
         } else if (error.message === 'GROUP_FULL') {
           await bot.sendMessage(
             chatId,
-            `洹몃９ '${groupTag}'? ?꾩옱 30紐낆쑝濡?媛??李쇱뒿?덈떎.`
+            `그룹 '${groupTag}'은 현재 30명으로 가득 찼습니다.`
           );
         } else {
           console.error('session registration error:', error);
           await bot.sendMessage(
             chatId,
-            '怨듬났 ?쒖옉 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎. ?좎떆 ???ㅼ떆 ?쒕룄??二쇱꽭??'
+            '공복을 시작하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
           );
         }
       }
@@ -734,7 +734,7 @@ bot.on('callback_query', async (query) => {
       if (!session) return;
 
       await bot.editMessageText(
-        'Select a score for your current fasting progress.',
+        '현재 공복 상태에 대한 점수를 선택해 주세요.',
         {
           chat_id: chatId,
           message_id: messageId,
@@ -768,7 +768,7 @@ bot.on('callback_query', async (query) => {
         });
 
         await bot.editMessageText(
-          'Final score ' + score + ' saved. Review complete.',
+          '최종 점수 ' + score + ' 저장 완료되었습니다. 확인이 끝났습니다.',
           {
             chat_id: chatId,
             message_id: messageId
@@ -810,15 +810,15 @@ bot.on('callback_query', async (query) => {
       });
 
       await bot.editMessageText(
-        'Current score ' + score + ' saved.',
+        '현재 점수 ' + score + ' 저장 완료.',
         {
           chat_id: chatId,
           message_id: messageId,
           reply_markup: keyboard([
-            [button('30 minutes', `alert:30:${session.id}`)],
-            [button('1 hour', `alert:60:${session.id}`)],
-            [button('2 hours', `alert:120:${session.id}`)],
-            [button('Turn off alerts', `alert:off:${session.id}`)]
+            [button('30분', `alert:30:${session.id}`)],
+            [button('1시간', `alert:60:${session.id}`)],
+            [button('2시간', `alert:120:${session.id}`)],
+            [button('알림 끄기', `alert:off:${session.id}`)]
           ])
         }
       );
@@ -829,7 +829,7 @@ bot.on('callback_query', async (query) => {
       const session = await findSession(chatId, query.from.id);
       if (session) await db.collection('liveSessions').doc(session.id).delete();
       draft.set(String(chatId), { step: 'name' });
-      await bot.sendMessage(chatId, 'Starting a new fasting session. Enter name_group.');
+      await bot.sendMessage(chatId, '새 공복을 시작합니다. 이름_그룹 형식으로 입력해 주세요.');
       return;
     }
 
@@ -843,9 +843,9 @@ bot.on('callback_query', async (query) => {
       const session = await findSession(chatId, query.from.id);
       if (!session) return;
       await bot.editMessageReplyMarkup(keyboard([
-        [button('30 minutes', `alert:30:${session.id}`), button('1 hour', `alert:60:${session.id}`)],
-        [button('2 hours', `alert:120:${session.id}`)],
-        [button('Disable alerts', `alert:off:${session.id}`)]
+        [button('30분', `alert:30:${session.id}`), button('1시간', `alert:60:${session.id}`)],
+        [button('2시간', `alert:120:${session.id}`)],
+        [button('알림 끄기', `alert:off:${session.id}`)]
       ]), { chat_id: chatId, message_id: messageId });
       return;
     }
@@ -859,7 +859,7 @@ bot.on('callback_query', async (query) => {
       if (value === 'off') {
         await ref.update({ alertsEnabled: false, nextReminderAt: null, updatedAt: FieldValue.serverTimestamp() });
       } else {
-        const minutes = Number(value);
+        const분 = Number(value);
         await ref.update({ alertsEnabled: true, reminderMinutes: minutes, nextReminderAt: new Date(Date.now() + minutes * 60000), updatedAt: FieldValue.serverTimestamp() });
       }
 
@@ -1184,8 +1184,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`HTTP server started: ${PORT}`);
   console.log('Fasting Telegram bot started.');
   console.log('Webhook endpoint: /telegram/webhook');
-  console.log(`First check-in reminder: ${FIRST_CHECKIN_MINUTES} minutes`);
-  console.log(`Board snapshot interval: ${BOARD_SNAPSHOT_MINUTES} minutes`);
+  console.log(`First check-in reminder: ${FIRST_CHECKIN_MINUTES}분`);
+  console.log(`Board snapshot interval: ${BOARD_SNAPSHOT_MINUTES}분`);
   startBoardSnapshotScheduler();
 
   refreshBoardSnapshots().catch((error) => {
