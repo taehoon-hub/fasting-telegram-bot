@@ -468,6 +468,27 @@ bot.on('callback_query', async (query) => {
       return;
     }
 
+    if (data.startsWith('resume:')) {
+      const [, sessionId] = data.split(':');
+      const session = await findSession(chatId, query.from.id);
+
+      if (!session || session.id !== sessionId) {
+        await bot.sendMessage(chatId, '이어갈 공복 세션을 찾을 수 없습니다.');
+        return;
+      }
+
+      await bot.editMessageText(
+        progressMessage(session),
+        {
+          chat_id: chatId,
+          message_id: messageId,
+          reply_markup: sessionKeyboard(chatId, session)
+        }
+      );
+
+      return;
+    }
+
     if (data === 'start_fasting') {
       draft.set(String(chatId), { step: 'name' });
 
