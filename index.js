@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 
 const path = require('path');
 const express = require('express');
@@ -100,7 +100,21 @@ async function checkDueReminders() {
     if (reminderLock.has(session.id)) continue;
 
     const reminderAt = firestoreMillis(session.nextReminderAt);
-    if (!Number.isFinite(reminderAt) || reminderAt > now) continue;
+    const due =
+      Number.isFinite(reminderAt) &&
+      reminderAt <= now;
+
+    console.log('Reminder check', {
+      sessionId: session.id,
+      status: session.status,
+      alertsEnabled: session.alertsEnabled,
+      firstCheckDone: session.firstCheckDone,
+      reminderAt,
+      now,
+      due
+    });
+
+    if (!due) continue;
 
     reminderLock.add(session.id);
 
@@ -120,7 +134,13 @@ async function checkDueReminders() {
           }
         );
 
-        await ref.update({
+        
+      console.log('First check-in reminder sent', {
+        sessionId: session.id,
+        chatId: session.telegramChatId
+      });
+
+      await ref.update({
           firstCheckDone: true,
           nextReminderAt: null,
           updatedAt: FieldValue.serverTimestamp()
@@ -144,12 +164,6 @@ async function checkDueReminders() {
     }
   }
 }
-setInterval(() => {
-  checkDueReminders().catch((error) => {
-    console.error('reminder scheduler error:', error);
-  });
-}, 30000);
-
 const button = (text, callback_data) => ({ text, callback_data });
 const keyboard = (inline_keyboard) => ({ inline_keyboard });
 
@@ -185,7 +199,7 @@ function progressMessage(session) {
     const reminderDate = session.nextReminderAt?.toDate ? session.nextReminderAt.toDate() : new Date(session.nextReminderAt);
     const remainingMinutes = Math.max(0, Math.ceil((reminderDate.getTime() - Date.now()) / 60000));
     const reminderTime = reminderDate.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-    next = `${reminderTime} (${remainingMinutes}분 후)`;
+    next = `${reminderTime} (${remainingMinutes}????`;
   }
   return `Fasting in progress.\n\nName: ${session.name}\nGroup: ${session.groupTag}\nGoal: ${session.targetHours} hours\n\nElapsed: ${Math.floor(elapsed / 60)} hours ${elapsed % 60} minutes\n\nRemaining: ${Math.floor(remaining / 60)} hours ${remaining % 60} minutes\n\nNext alert: ${next}`;
 }
@@ -193,7 +207,7 @@ function progressMessage(session) {
 async function findSession(chatId, userId) {
   let query = db.collection('liveSessions')
     .where('telegramChatId', '==', String(chatId))
-    .where('status', '==', 'active');
+    .where('status', 'in', ['active', 'completed']);
 
   if (userId !== undefined && userId !== null) {
     query = query.where('telegramUserId', '==', String(userId));
@@ -207,7 +221,7 @@ async function findSession(chatId, userId) {
 }
 
 function scoreKeyboard(sessionId) {
-  return keyboard([
+  const result = keyboard([
     [
       button('100', `score:100:${sessionId}`),
       button('95', `score:95:${sessionId}`)
@@ -217,6 +231,10 @@ function scoreKeyboard(sessionId) {
       button('80', `score:80:${sessionId}`)
     ]
   ]);
+
+  console.log('SCORE KEYBOARD GENERATED', JSON.stringify(result));
+
+  return result;
 }
 
 function sessionKeyboard(chatId, session) {
@@ -296,8 +314,8 @@ bot.on('message', async (msg) => {
     return;
   }
 
-  state.name = parts.slice(0, -1).join('_');
-  state.groupTag = parts.at(-1);
+  state.name = parts.slice(0, -1).join('_').trim();
+  state.groupTag = parts.at(-1).trim();
   state.step = 'target';
   draft.set(String(msg.chat.id), state);
 
@@ -311,6 +329,11 @@ bot.on('message', async (msg) => {
 });
 
 bot.on('callback_query', async (query) => {
+  console.log('CALLBACK HANDLER ENTERED', {
+    id: query?.id || null,
+    data: query?.data || null
+  });
+
   const chatId = query.message.chat.id;
   const messageId = query.message.message_id;
   const data = query.data || '';
@@ -319,8 +342,395 @@ bot.on('callback_query', async (query) => {
   try {
     await bot.answerCallbackQuery(query.id);
 
+    if (data.startsWith('target:')) {
+      const targetHours = Number(data.split(':')[1]);
+
+      if (![12, 14, 16, 18, 20].includes(targetHours)) {
+        return;
+      }
+
+      const name = String(state.name || '').trim();
+      const groupTag = String(state.groupTag || '').trim();
+
+      if (!name || !groupTag) {
+        await bot.sendMessage(
+          chatId,
+          '?대쫫怨?洹몃９ ?뺣낫媛 ?놁뒿?덈떎. /start瑜??ㅼ떆 ?ㅽ뻾??二쇱꽭??'
+        );
+        return;
+      }
+
+      if (name.length > 40 || groupTag.length > 30) {
+        await bot.sendMessage(
+          chatId,
+          '?대쫫 ?먮뒗 洹몃９紐낆씠 ?덈Т 源곷땲??'
+        );
+        return;
+      }
+
+      const sessionId = `${chatId}_${query.from.id}`;
+      const sessionRef = db.collection('liveSessions').doc(sessionId);
+      const groupRef = db.collection('groups').doc(groupTag);
+      const activeQuery = db.collection('liveSessions')
+        .where('groupTag', '==', groupTag)
+        .where('status', '==', 'active');
+
+      try {
+        await db.runTransaction(async (transaction) => {
+          const groupDoc = await transaction.get(groupRef);
+          const activeSnap = await transaction.get(activeQuery);
+
+          const duplicate = activeSnap.docs.some((doc) => {
+            const existing = doc.data();
+            return String(existing.name || '').trim() === name;
+          });
+
+          if (duplicate) {
+            throw new Error('DUPLICATE_NAME');
+          }
+
+          if (activeSnap.size >= 30) {
+            throw new Error('GROUP_FULL');
+          }
+
+          const now = new Date();
+          const targetAt = new Date(
+            now.getTime() + targetHours * 60 * 60 * 1000
+          );
+
+          transaction.set(groupRef, {
+            groupTag,
+            memberLimit: 30,
+            memberCount: activeSnap.size + 1,
+            updatedAt: FieldValue.serverTimestamp()
+          }, { merge: true });
+
+          transaction.set(sessionRef, {
+            id: sessionId,
+            telegramChatId: String(chatId),
+            telegramUserId: String(query.from.id),
+            name,
+            groupTag,
+            targetHours,
+            status: 'active',
+            startedAt: FieldValue.serverTimestamp(),
+            targetAt,
+            expiresAt: targetAt,
+            alertsEnabled: true,
+            reminderMinutes: 30,
+            nextReminderAt: new Date(now.getTime() + FIRST_CHECKIN_MINUTES * 60000),
+            firstCheckDone: false,
+            scoreCounts: {
+              100: 0,
+              95: 0,
+              90: 0,
+              80: 0
+            },
+            scoreCheckCount: 0,
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp()
+          });
+        });
+
+        draft.delete(String(chatId));
+
+        await bot.editMessageText(
+          `怨듬났???쒖옉?덉뒿?덈떎.\n\n?대쫫: ${name}\n洹몃９: ${groupTag}\n紐⑺몴: ${targetHours}?쒓컙`,
+          {
+            chat_id: chatId,
+            message_id: messageId,
+            reply_markup: sessionKeyboard(chatId, {
+              id: sessionId,
+              groupTag
+            })
+          }
+        );
+      } catch (error) {
+        if (error.message === 'DUPLICATE_NAME') {
+          await bot.sendMessage(
+            chatId,
+            `洹몃９ '${groupTag}'??媛숈? ?대쫫???대? ?깅줉?섏뼱 ?덉뒿?덈떎. ?ㅻⅨ ?대쫫???낅젰??二쇱꽭??`
+          );
+        } else if (error.message === 'GROUP_FULL') {
+          await bot.sendMessage(
+            chatId,
+            `洹몃９ '${groupTag}'? ?꾩옱 30紐낆쑝濡?媛??李쇱뒿?덈떎. ?ㅻⅨ 洹몃９???낅젰??二쇱꽭??`
+          );
+        } else {
+          console.error('session registration error:', error);
+          await bot.sendMessage(
+            chatId,
+            '怨듬났 ?쒖옉 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎. ?좎떆 ???ㅼ떆 ?쒕룄??二쇱꽭??'
+          );
+        }
+      }
+
+      return;
+    }
+
+    if (data === 'start_fasting') {
+      draft.set(String(chatId), { step: 'name' });
+
+      await bot.sendMessage(
+        chatId,
+        '?대쫫怨?洹몃９???낅젰??二쇱꽭??\n?? 湲몃룞_?ъ닔'
+      );
+
+      return;
+    }
+
+    if (data === 'help') {
+      await bot.sendMessage(
+        chatId,
+        '?ъ슜 諛⑸쾿\n\n1. 怨듬났 ?쒖옉???꾨쫭?덈떎.\n2. ?대쫫_洹몃９ ?뺤떇?쇰줈 ?낅젰?⑸땲??\n3. ?⑥떇 ?쒓컙???좏깮?⑸땲??'
+      );
+
+      return;
+    }
+
+    if (data.startsWith('target:')) {
+      const targetHours = Number(data.split(':')[1]);
+
+      if (![12, 14, 16, 18, 20].includes(targetHours)) {
+        return;
+      }
+
+      const name = String(state.name || '').trim();
+      const groupTag = String(state.groupTag || '').trim();
+
+      if (!name || !groupTag) {
+        await bot.sendMessage(
+          chatId,
+          '?대쫫怨?洹몃９ ?뺣낫媛 ?놁뒿?덈떎. /start瑜??ㅼ떆 ?ㅽ뻾??二쇱꽭??'
+        );
+        return;
+      }
+
+      const sessionId = `${chatId}_${query.from.id}`;
+      const sessionRef = db.collection('liveSessions').doc(sessionId);
+      const groupRef = db.collection('groups').doc(groupTag);
+      const activeQuery = db.collection('liveSessions')
+        .where('groupTag', '==', groupTag)
+        .where('status', '==', 'active');
+
+      try {
+        await db.runTransaction(async (transaction) => {
+          const groupDoc = await transaction.get(groupRef);
+          const activeSnap = await transaction.get(activeQuery);
+
+          const duplicate = activeSnap.docs.some((doc) => {
+            const existing = doc.data();
+            return String(existing.name || '').trim() === name;
+          });
+
+          if (duplicate) {
+            throw new Error('DUPLICATE_NAME');
+          }
+
+          if (activeSnap.size >= 30) {
+            throw new Error('GROUP_FULL');
+          }
+
+          const now = new Date();
+          const targetAt = new Date(
+            now.getTime() + targetHours * 60 * 60 * 1000
+          );
+
+          transaction.set(groupRef, {
+            groupTag,
+            memberLimit: 30,
+            memberCount: activeSnap.size + 1,
+            updatedAt: FieldValue.serverTimestamp()
+          }, { merge: true });
+
+          transaction.set(sessionRef, {
+            id: sessionId,
+            telegramChatId: String(chatId),
+            telegramUserId: String(query.from.id),
+            name,
+            groupTag,
+            targetHours,
+            status: 'active',
+            startedAt: FieldValue.serverTimestamp(),
+            targetAt,
+            expiresAt: targetAt,
+            alertsEnabled: true,
+            reminderMinutes: 30,
+            nextReminderAt: new Date(now.getTime() + FIRST_CHECKIN_MINUTES * 60000),
+            firstCheckDone: false,
+            scoreCounts: {
+              100: 0,
+              95: 0,
+              90: 0,
+              80: 0
+            },
+            scoreCheckCount: 0,
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp()
+          });
+        });
+
+        draft.delete(String(chatId));
+
+        await bot.editMessageText(
+          `怨듬났???쒖옉?덉뒿?덈떎.\n\n?대쫫: ${name}\n洹몃９: ${groupTag}\n紐⑺몴: ${targetHours}?쒓컙`,
+          {
+            chat_id: chatId,
+            message_id: messageId,
+            reply_markup: sessionKeyboard(chatId, {
+              id: sessionId,
+              groupTag
+            })
+          }
+        );
+      } catch (error) {
+        if (error.message === 'DUPLICATE_NAME') {
+          await bot.sendMessage(
+            chatId,
+            `洹몃９ '${groupTag}'??媛숈? ?대쫫???대? ?깅줉?섏뼱 ?덉뒿?덈떎. ?ㅻⅨ ?대쫫???낅젰??二쇱꽭??`
+          );
+        } else if (error.message === 'GROUP_FULL') {
+          await bot.sendMessage(
+            chatId,
+            `洹몃９ '${groupTag}'? ?꾩옱 30紐낆쑝濡?媛??李쇱뒿?덈떎. ?ㅻⅨ 洹몃９???낅젰??二쇱꽭??`
+          );
+        } else {
+          console.error('session registration error:', error);
+          await bot.sendMessage(
+            chatId,
+            '怨듬났 ?쒖옉 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎. ?좎떆 ???ㅼ떆 ?쒕룄??二쇱꽭??'
+          );
+        }
+      }
+
+      return;
+    }
+
+    if (data.startsWith('target:')) {
+      const targetHours = Number(data.split(':')[1]);
+
+      if (![12, 14, 16, 18, 20].includes(targetHours)) {
+        return;
+      }
+
+      const name = String(state.name || '').trim();
+      const groupTag = String(state.groupTag || '').trim();
+
+      if (!name || !groupTag) {
+        await bot.sendMessage(
+          chatId,
+          '?대쫫怨?洹몃９ ?뺣낫媛 ?놁뒿?덈떎. /start瑜??ㅼ떆 ?ㅽ뻾??二쇱꽭??'
+        );
+        return;
+      }
+
+      const sessionId = `${chatId}_${query.from.id}`;
+      const sessionRef = db.collection('liveSessions').doc(sessionId);
+      const groupRef = db.collection('groups').doc(groupTag);
+      const activeQuery = db.collection('liveSessions')
+        .where('groupTag', '==', groupTag)
+        .where('status', '==', 'active');
+
+      try {
+        await db.runTransaction(async (transaction) => {
+          const activeSnap = await transaction.get(activeQuery);
+
+          const duplicate = activeSnap.docs.some((doc) => {
+            const existing = doc.data();
+            return String(existing.name || '').trim() === name;
+          });
+
+          if (duplicate) {
+            throw new Error('DUPLICATE_NAME');
+          }
+
+          if (activeSnap.size >= 30) {
+            throw new Error('GROUP_FULL');
+          }
+
+          const now = new Date();
+          const targetAt = new Date(
+            now.getTime() + targetHours * 60 * 60 * 1000
+          );
+
+          transaction.set(groupRef, {
+            groupTag,
+            memberLimit: 30,
+            memberCount: activeSnap.size + 1,
+            updatedAt: FieldValue.serverTimestamp()
+          }, { merge: true });
+
+          transaction.set(sessionRef, {
+            telegramChatId: String(chatId),
+            telegramUserId: String(query.from.id),
+            name,
+            groupTag,
+            targetHours,
+            status: 'active',
+            startedAt: FieldValue.serverTimestamp(),
+            targetAt,
+            expiresAt: targetAt,
+            alertsEnabled: true,
+            reminderMinutes: 30,
+            nextReminderAt: new Date(now.getTime() + FIRST_CHECKIN_MINUTES * 60000),
+            firstCheckDone: false,
+            scoreCounts: {
+              100: 0,
+              95: 0,
+              90: 0,
+              80: 0
+            },
+            scoreCheckCount: 0,
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp()
+          });
+        });
+
+        draft.delete(String(chatId));
+
+        await bot.editMessageText(
+          `怨듬났???쒖옉?덉뒿?덈떎.\n\n?대쫫: ${name}\n洹몃９: ${groupTag}\n紐⑺몴: ${targetHours}?쒓컙`,
+          {
+            chat_id: chatId,
+            message_id: messageId,
+            reply_markup: sessionKeyboard(chatId, {
+              id: sessionId,
+              groupTag
+            })
+          }
+        );
+
+        await refreshBoardSnapshots();
+      } catch (error) {
+        if (error.message === 'DUPLICATE_NAME') {
+          await bot.sendMessage(
+            chatId,
+            `洹몃９ '${groupTag}'??媛숈? ?대쫫???대? ?깅줉?섏뼱 ?덉뒿?덈떎.`
+          );
+        } else if (error.message === 'GROUP_FULL') {
+          await bot.sendMessage(
+            chatId,
+            `洹몃９ '${groupTag}'? ?꾩옱 30紐낆쑝濡?媛??李쇱뒿?덈떎.`
+          );
+        } else {
+          console.error('session registration error:', error);
+          await bot.sendMessage(
+            chatId,
+            '怨듬났 ?쒖옉 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎. ?좎떆 ???ㅼ떆 ?쒕룄??二쇱꽭??'
+          );
+        }
+      }
+
+      return;
+    }
+
     if (data.startsWith('score_prompt:')) {
       const session = await findSession(chatId, query.from.id);
+      console.log('SCORE PROMPT CALLBACK', {
+  data,
+  chatId,
+  userId: query.from?.id
+});
       if (!session) return;
 
       await bot.editMessageText(
@@ -335,11 +745,12 @@ bot.on('callback_query', async (query) => {
     }
 
     if (data.startsWith('score:')) {
-      const [, scoreText, sessionId] = data.split(':');
+      const [, scoreText] = data.split(':');
       const score = Number(scoreText);
       const session = await findSession(chatId, query.from.id);
+      console.log('SCORE SESSION LOOKUP', { data, chatId, userId: query.from?.id, sessionId: session?.id || null, found: Boolean(session) });
 
-      if (!session || session.id !== sessionId || ![100, 95, 90, 80].includes(score)) {
+      if (!session || ![100, 95, 90, 80].includes(score)) {
         return;
       }
 
@@ -551,7 +962,7 @@ async function buildBoardSnapshot(group) {
       const completedAt = toMillis(session.completedAt);
 
       if (
-        Number.isFinite(completedAt) &&
+        !Number.isFinite(completedAt) ||
         now - completedAt <= 24 * 60 * 60 * 1000
       ) {
         completedRows.push({
@@ -570,25 +981,47 @@ async function buildBoardSnapshot(group) {
     }
   }
 
+  const completedSnap = await db.collection('completedSessions')
+    .where('groupTag', '==', group)
+    .get();
+
+  for (const completedDoc of completedSnap.docs) {
+    const session = { id: completedDoc.id, ...completedDoc.data() };
+
+    completedRows.push({
+      id: session.id,
+      name: session.name || session.displayName,
+      targetHours: session.targetHours,
+      scoreCounts: {
+        100: '',
+        95: '',
+        90: '',
+        80: ''
+      },
+      completionSection: {
+        reviewStatus: session.selfReviewStatus || 'completed',
+        finalScore: session.selfReviewScore ?? null
+      }
+    });
+  }
+
   activeRows.sort((a, b) => b.progressPercent - a.progressPercent);
   completedRows.sort((a, b) => String(a.name).localeCompare(String(b.name)));
 
-  const rows = [
-    ...activeRows.map((row, index) => ({
-      ...row,
-      rank: index + 1,
-      section: 'active'
-    })),
-    ...completedRows.map((row) => ({
-      ...row,
-      rank: null,
-      section: 'goalAchieved'
-    }))
-  ];
+  const rows = activeRows.map((row, index) => ({
+    ...row,
+    rank: index + 1,
+    section: 'active'
+  }));
 
   await db.collection('boardSnapshots').doc(group).set({
     group,
     rows,
+    completed: completedRows.map((row) => ({
+      ...row,
+      rank: null,
+      section: 'goalAchieved'
+    })),
     lastUpdatedAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp()
   }, { merge: true });
@@ -611,7 +1044,7 @@ app.get('/board', (_req, res) => {
 });
 
 app.get('/api/board', async (req, res) => {
-  res.set('Cache-Control', 'public, max-age=60, s-maxage=60');
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
 
   try {
     const group = String(req.query.group || '');
@@ -636,7 +1069,8 @@ app.get('/api/board', async (req, res) => {
     res.json({
       group,
       lastUpdatedAt: snapshot.lastUpdatedAt || null,
-      rows: Array.isArray(snapshot.rows) ? snapshot.rows : []
+      rows: Array.isArray(snapshot.rows) ? snapshot.rows : [],
+      completed: Array.isArray(snapshot.completed) ? snapshot.completed : []
     });
   } catch (error) {
     console.error('/api/board error:', error);
@@ -645,16 +1079,23 @@ app.get('/api/board', async (req, res) => {
 });
 
 async function getBoardGroups() {
-  const snap = await db.collection('liveSessions')
-    .select('groupTag')
-    .get();
+  const groupSet = new Set();
 
-  return [...new Set(
-    snap.docs
-      .map((doc) => doc.data().groupTag)
-      .filter((group) => group)
-      .map((group) => String(group))
-  )];
+  for (const collectionName of ['liveSessions', 'completedSessions']) {
+    const snap = await db.collection(collectionName)
+      .select('groupTag')
+      .get();
+
+    for (const doc of snap.docs) {
+      const group = String(doc.data().groupTag || '').trim();
+
+      if (group) {
+        groupSet.add(group);
+      }
+    }
+  }
+
+  return [...groupSet];
 }
 
 async function refreshBoardSnapshots() {
@@ -666,7 +1107,7 @@ async function refreshBoardSnapshots() {
     }
 
     console.log(
-      `Board snapshots refreshed: ${groups.length} group(s)`
+      `Board snapshots refreshed: ${groups.length} group(s): ${groups.join(", ")}`
     );
   } catch (error) {
     console.error('board snapshot refresh error:', error);
@@ -708,10 +1149,30 @@ function startBoardSnapshotScheduler() {
   );
 }
 app.post('/telegram/webhook', (req, res) => {
+  console.log('WEBHOOK REQUEST RECEIVED', {
+    updateId: req.body?.update_id,
+    hasCallbackQuery: Boolean(req.body?.callback_query),
+    callbackData: req.body?.callback_query?.data || null,
+    secretPresent: Boolean(req.get('X-Telegram-Bot-Api-Secret-Token'))
+  });
+
   const receivedSecret = req.get('X-Telegram-Bot-Api-Secret-Token');
-  if (receivedSecret !== TELEGRAM_WEBHOOK_SECRET) return res.sendStatus(403);
+
+  if (receivedSecret !== TELEGRAM_WEBHOOK_SECRET) {
+    console.error('WEBHOOK SECRET MISMATCH');
+    return res.sendStatus(403);
+  }
+
   res.sendStatus(200);
-  bot.processUpdate(req.body);
+
+  Promise.resolve()
+    .then(() => bot.processUpdate(req.body))
+    .catch((error) => {
+      console.error('processUpdate error:', {
+        message: error.message,
+        stack: error.stack
+      });
+    });
 });
 
 console.log('BOOT FILE: index.js');
@@ -726,6 +1187,32 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`First check-in reminder: ${FIRST_CHECKIN_MINUTES} minutes`);
   console.log(`Board snapshot interval: ${BOARD_SNAPSHOT_MINUTES} minutes`);
   startBoardSnapshotScheduler();
+
+  refreshBoardSnapshots().catch((error) => {
+    console.error('startup board snapshot refresh error:', error);
+  });
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
