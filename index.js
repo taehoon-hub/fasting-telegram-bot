@@ -1210,6 +1210,16 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Board snapshot interval: ${BOARD_SNAPSHOT_MINUTES}분`);
   startBoardSnapshotScheduler();
 
+  setInterval(() => {
+    checkDueReminders().catch((error) => {
+      console.error('scheduled reminder check error:', error);
+    });
+  }, 60 * 1000);
+
+  checkDueReminders().catch((error) => {
+    console.error('startup reminder check error:', error);
+  });
+
   refreshBoardSnapshots().catch((error) => {
     console.error('startup board snapshot refresh error:', error);
   });
