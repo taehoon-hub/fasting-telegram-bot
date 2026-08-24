@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 
 const path = require('path');
 const express = require('express');
@@ -58,6 +58,7 @@ async function checkDueReminders() {
   const now = Date.now();
   const snapshot = await db.collection('liveSessions')
     .where('status', '==', 'active')
+    .where('targetAt', '<=', new Date())
     .get();
 
   for (const document of snapshot.docs) {
