@@ -1,4 +1,4 @@
-﻿console.log("BOARD JS LIVE ROW FIX: 202608192352");
+console.log("BOARD JS LIVE ROW FIX: 202608192352");
 
 (() => {
   const tg = window.Telegram?.WebApp;
@@ -25,7 +25,6 @@
     completedMobile: document.getElementById("completed-mobile-list"),
     completedEmpty: document.getElementById("completed-empty"),
     empty: document.getElementById("empty-box"),
-    back: document.getElementById("back-button")
   };
 
   function escapeHtml(value) {
@@ -173,8 +172,7 @@
 
     if (el.updated) {
       el.updated.textContent =
-        `\uB370\uC774\uD130 \uAE30\uC900: ${formatDate(data.generatedAt)} \u00B7 ` +
-        `\uB2E4\uC74C \uAC31\uC2E0: ${formatDate(data.nextRefreshAt)}`;
+        `데이터 기준: ${formatDate(data.lastUpdatedAt)} · 매시 정각과 30분에 자동 갱신`
     }
 
     if (el.activeCount) {
@@ -259,16 +257,20 @@
 
   if (el.refresh) {
     el.refresh.addEventListener("click", load);
-  }
 
-  if (el.back) {
-    el.back.addEventListener("click", () => {
-      if (tg?.close) {
-        tg.close();
-      } else {
-        window.history.back();
-      }
+  const openChatButton = document.getElementById("open-chat-button");
+
+  if (openChatButton) {
+    openChatButton.addEventListener("click", () => {
+      alert(
+        "오픈채팅방 개설 안내\n\n" +
+        "건전한 공복 목표 달성과 경험 공유를 위한 그룹 오픈채팅방입니다.\n\n" +
+        "개설 비용: 50,000원\n\n" +
+        "입금 확인 후 운영자가 해당 그룹의 오픈채팅방을 개설하고 입장 링크를 등록합니다.\n\n" +
+        "개설을 원하시면 운영자에게 문의해 주세요."
+      );
     });
+  }
   }
 
   load();

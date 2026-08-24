@@ -10,9 +10,18 @@
   <main class="board-shell">
     <header class="board-header">
       <h1>&#54788;&#54889;&#54032; <span id="group-label">&#44536;&#47353; &#54869;&#51064; &#51473;</span></h1>
-      <p id="board-updated">&#45936;&#51060;&#53552; &#44592;&#51456;: &#54869;&#51064; &#51473;...</p>
-      <p class="board-note">&#49892;&#49884;&#44036; &#51652;&#54665;&#51088; &#54252;&#54632; &#183; &#51221;&#44592;&#51088;&#47308;&#45716; &#47588;&#49884; &#51221;&#44033;&#44284; 30&#48516;&#50640; &#44031;&#49888;&#46121;&#45768;&#45796;.</p>
-      <button id="refresh-button" class="refresh-button" type="button">&#52572;&#49888; &#51221;&#44592;&#51088;&#47308; &#54869;&#51064;</button>
+      <p id="board-updated">데이터 기준: 업데이트 준비 중</p>
+      <p class="board-note">진행 중인 참여자와 최근 24시간 내 목표 달성자를 표시합니다.<br>현황은 매시 정각과 30분에 자동 갱신됩니다.</p>
+      <button id="refresh-button" class="refresh-button" type="button">새로고침</button>
+    <section class="open-chat-card" aria-labelledby="open-chat-title">
+      <h2 id="open-chat-title">그룹 오픈채팅방</h2>
+      <p id="open-chat-description">
+        이 그룹은 아직 오픈채팅방이 개설되지 않았습니다.
+      </p>
+      <button id="open-chat-button" class="open-chat-button" type="button">
+        오픈채팅방 개설 안내
+      </button>
+    </section>
     </header>
 
     <section class="board-card" aria-labelledby="active-title">
@@ -68,9 +77,6 @@
       <div id="completed-mobile-list" class="mobile-list"></div>
       <p id="completed-empty" class="status-box">&#51060;&#51204; 24&#49884;&#44036; &#45236; &#47785;&#54364; &#45804;&#49457;&#51088;&#44032; &#50630;&#49845;&#45768;&#45796;.</p>
     </section>
-
-    <button id="back-button" class="back-button" type="button">&#46028;&#50500;&#44032;&#44592;</button>
-      <div id="board-version">BOARD UI VERSION: 20260819-0135</div>
   </main>
 
   <script src="/board.js?v=2026081903" defer></script>
