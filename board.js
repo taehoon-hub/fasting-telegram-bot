@@ -76,18 +76,18 @@
 
   function completedTableRow(row, index) {
     const item = normalize(row, index, true);
-    const review =
-      item.selfReviewStatus === "completed"
-        ? "\uC644\uB8CC" +
-          (item.selfReviewScore ? ` \u00B7 ${item.selfReviewScore}\uC810` : "")
-        : "\uB300\uAE30\uC911";
+    const reviewed = item.completionStatus === "reviewCompleted";
+    const selectedScore = Number(item.completionScore);
 
     return `
       <tr>
         <td>${escapeHtml(item.name)}</td>
         <td>${item.targetHours}</td>
-        <td>${item.completionScore !== null ? item.completionScore : ""}</td>
-        <td>${item.completionStatus === "reviewCompleted" ? "확인완료" : "대기중"}</td>
+        <td>${selectedScore === 100 ? "❤️" : ""}</td>
+        <td>${selectedScore === 95 ? "❤️" : ""}</td>
+        <td>${selectedScore === 90 ? "❤️" : ""}</td>
+        <td>${selectedScore === 80 ? "❤️" : ""}</td>
+        <td>${reviewed ? "❤️" : "대기중"}</td>
       </tr>
     `;
   }
