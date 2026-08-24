@@ -773,6 +773,7 @@ bot.on('callback_query', async (query) => {
       console.log('SCORE SESSION LOOKUP', { data, chatId, userId: query.from?.id, sessionId: session?.id || null, found: Boolean(session) });
 
       if (!session || ![100, 95, 90, 80].includes(score)) {
+        await refreshBoardSnapshots();
         return;
       }
 
@@ -782,12 +783,26 @@ bot.on('callback_query', async (query) => {
         session.status === 'completed' &&
         session.reviewStatus === 'autoCompleted'
       ) {
+        const now = FieldValue.serverTimestamp();
+
         await ref.update({
           finalScore: score,
           reviewStatus: 'reviewCompleted',
-          reviewedAt: FieldValue.serverTimestamp(),
-          updatedAt: FieldValue.serverTimestamp()
+          reviewedAt: now,
+          updatedAt: now
         });
+
+        const completedRef = db.collection('completedSessions').doc(session.id);
+        const completedSnap = await completedRef.get();
+
+        if (completedSnap.exists) {
+          await completedRef.update({
+            selfReviewScore: score,
+            selfReviewStatus: 'reviewCompleted',
+            reviewedAt: now,
+            updatedAt: now
+          });
+        }
 
         await bot.editMessageText(
           '최종 점수 ' + score + ' 저장 완료되었습니다. 확인이 끝났습니다.',

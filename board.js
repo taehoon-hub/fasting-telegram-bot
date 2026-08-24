@@ -1,4 +1,4 @@
-console.log("BOARD JS LIVE ROW FIX: 202608192352");
+﻿console.log("BOARD JS LIVE ROW FIX: 202608192352");
 
 (() => {
   const tg = window.Telegram?.WebApp;
@@ -50,6 +50,8 @@ console.log("BOARD JS LIVE ROW FIX: 202608192352");
         row?.progressPercent ?? (completed ? 100 : 0)
       ),
       scores: row?.scoreCounts || {},
+      completionStatus: row?.completionSection?.reviewStatus || row?.selfReviewStatus || null,
+      completionScore: row?.completionSection?.finalScore ?? row?.selfReviewScore ?? null,
       selfReviewStatus: row?.selfReviewStatus || null,
       selfReviewScore: row?.selfReviewScore ?? null
     };
@@ -84,10 +86,8 @@ console.log("BOARD JS LIVE ROW FIX: 202608192352");
       <tr>
         <td>${escapeHtml(item.name)}</td>
         <td>${item.targetHours}</td>
-        <td>${score(item.scores, 100)}</td>
-        <td>${score(item.scores, 95)}</td>
-        <td>${score(item.scores, 90)}</td>
-        <td>${score(item.scores, 80)}</td>
+        <td>${item.completionScore !== null ? item.completionScore : ""}</td>
+        <td>${item.completionStatus === "reviewCompleted" ? "확인완료" : "대기중"}</td>
         <td>${review}</td>
       </tr>
     `;
