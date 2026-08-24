@@ -88,7 +88,6 @@
         <td>${item.targetHours}</td>
         <td>${item.completionScore !== null ? item.completionScore : ""}</td>
         <td>${item.completionStatus === "reviewCompleted" ? "확인완료" : "대기중"}</td>
-        <td>${review}</td>
       </tr>
     `;
   }
