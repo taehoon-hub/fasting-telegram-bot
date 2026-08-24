@@ -1,4 +1,4 @@
-console.log("BOARD JS LIVE ROW FIX: 202608192352");
+﻿console.log("BOARD JS LIVE ROW FIX: 202608192352");
 
 (() => {
   const tg = window.Telegram?.WebApp;
@@ -141,23 +141,31 @@ console.log("BOARD JS LIVE ROW FIX: 202608192352");
   }
 
   function formatDate(value) {
-    if (!value) {
-      return "\uD655\uC778\uB418\uC9C0 \uC54A\uC74C";
+    if (!value) return "업데이트 준비 중";
+
+    let date;
+
+    if (typeof value?.toDate === "function") {
+      date = value.toDate();
+    } else if (typeof value?.seconds === "number") {
+      date = new Date(
+        Number(value.seconds) * 1000 +
+        Math.floor(Number(value.nanoseconds || 0) / 1000000)
+      );
+    } else {
+      date = new Date(value);
     }
 
-    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "업데이트 준비 중";
 
-    if (Number.isNaN(date.getTime())) {
-      return "\uD655\uC778\uB418\uC9C0 \uC54A\uC74C";
-    }
-
-    return date.toLocaleString("ko-KR", {
+    return new Intl.DateTimeFormat("ko-KR", {
       timeZone: "Asia/Seoul",
+      year: "numeric",
       month: "numeric",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit"
-    });
+    }).format(date);
   }
 
   function render(data) {
