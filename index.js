@@ -1,4 +1,4 @@
-﻿require('dotenv').config();
+require('dotenv').config();
 
 const path = require('path');
 const express = require('express');
@@ -1105,7 +1105,7 @@ app.get('/api/board', async (req, res) => {
 
     res.json({
       group,
-      lastUpdatedAt: snapshot.lastUpdatedAt || null,
+      lastUpdatedAt: snapshot.lastUpdatedAt?.toMillis?.() ?? null,
       rows: Array.isArray(snapshot.rows) ? snapshot.rows : [],
       completed: Array.isArray(snapshot.completed) ? snapshot.completed : []
     });
