@@ -880,7 +880,7 @@ bot.on('callback_query', async (query) => {
       if (value === 'off') {
         await ref.update({ alertsEnabled: false, nextReminderAt: null, updatedAt: FieldValue.serverTimestamp() });
       } else {
-        const분 = Number(value);
+        const minutes = Number(value);
         await ref.update({ alertsEnabled: true, reminderMinutes: minutes, nextReminderAt: new Date(Date.now() + minutes * 60000), updatedAt: FieldValue.serverTimestamp() });
       }
 
