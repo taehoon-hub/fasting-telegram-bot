@@ -55,6 +55,7 @@ function firestoreMillis(value) {
 }
 
 async function checkDueReminders() {
+  console.log('Reminder checker started');
   const now = Date.now();
   const snapshot = await db.collection('liveSessions')
     .where('status', '==', 'active')
