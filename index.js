@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 
 const path = require('path');
 const express = require('express');
@@ -804,11 +804,22 @@ bot.on('callback_query', async (query) => {
           });
         }
 
+        const boardButton = webAppButton(chatId, session.groupTag);
+        const progressButton = button('현재 진행 상황', 'progress:' + session.id);
+        const restartButton = button('공복 다시 시작', 'restart:' + session.id);
+
         await bot.editMessageText(
-          '최종 점수 ' + score + ' 저장 완료되었습니다. 확인이 끝났습니다.',
+          '공복 기록을 함께 해 주셔서 감사합니다.\n' +
+          '최종 점수 ' + score + ' 저장 완료되었습니다.\n\n' +
+          '이로써 공복 일정을 마무리합니다.\n\n' +
+          '이제는 섭취의 기쁨을 누리세요.',
           {
             chat_id: chatId,
-            message_id: messageId
+            message_id: messageId,
+            reply_markup: keyboard([
+              [boardButton],
+              [progressButton, restartButton]
+            ])
           }
         );
 
