@@ -106,7 +106,7 @@
         <div class="mobile-card-meta">
           \uAC80\uC218:
           ${
-            item.selfReviewStatus === "completed"
+            item.completionStatus === "reviewCompleted"
               ? "\uC644\uB8CC" +
                 (item.selfReviewScore
                   ? ` \u00B7 ${item.selfReviewScore}\uC810`
