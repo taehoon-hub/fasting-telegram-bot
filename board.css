@@ -1,4 +1,4 @@
-/* BOARD CSS VERSION: 20260819-2315 */
+﻿/* BOARD CSS VERSION: 20260819-2315 */
 * {
   box-sizing: border-box;
 }
@@ -407,4 +407,31 @@ button {
     margin-top: 14px;
     padding: 16px 6px 12px;
   }
+}
+
+/* Completed board readability */
+.completed-table th:nth-child(1),
+.completed-table td:nth-child(1) {
+  width: 30%;
+  text-align: left;
+  padding-left: 12px;
+}
+
+.completed-table th:nth-child(2),
+.completed-table td:nth-child(2) {
+  width: 16%;
+}
+
+.completed-table th:nth-child(n + 3),
+.completed-table td:nth-child(n + 3) {
+  width: 10.8%;
+  text-align: center;
+}
+
+.status-box {
+  font-size: 14px;
+}
+
+.section-description {
+  font-size: 13px;
 }

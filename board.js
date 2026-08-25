@@ -63,7 +63,7 @@
       <tr>
         <td>${item.rank}</td>
         <td>${escapeHtml(item.name)}</td>
-        <td>${item.targetHours}</td>
+        <td>${item.targetHours}시간</td>
         <td>${item.progressPercent}%</td>
         <td>${score(item.scores, 100)}</td>
         <td>${score(item.scores, 95)}</td>
@@ -81,7 +81,7 @@
     return `
       <tr>
         <td>${escapeHtml(item.name)}</td>
-        <td>${item.targetHours}</td>
+        <td>${item.targetHours}시간</td>
         <td>${selectedScore === 100 ? "❤️" : ""}</td>
         <td>${selectedScore === 95 ? "❤️" : ""}</td>
         <td>${selectedScore === 90 ? "❤️" : ""}</td>
@@ -185,6 +185,11 @@
 
     if (el.activeCount) {
       el.activeCount.textContent = `${rows.length}\uBA85`;
+
+    const completedCount = document.getElementById("completed-count");
+    if (completedCount) {
+      completedCount.textContent = `${completed.length}\uBA85`;
+    }
     }
 
     if (el.activeBody) {
