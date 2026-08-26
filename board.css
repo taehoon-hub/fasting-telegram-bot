@@ -435,3 +435,89 @@ button {
 .section-description {
   font-size: 13px;
 }
+/* Completed info dialog */
+.completed-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.completed-heading > span:first-child {
+  white-space: nowrap;
+}
+
+.info-button {
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #777777;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 700;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.info-button:hover,
+.info-button:focus-visible {
+  color: #222222;
+}
+
+.info-dialog {
+  width: min(480px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 20px;
+  background: #ffffff;
+  color: #222222;
+  box-shadow: 0 18px 60px rgb(0 0 0 / 22%);
+}
+
+.info-dialog::backdrop {
+  background: rgb(0 0 0 / 42%);
+}
+
+.info-dialog-content {
+  padding: 26px 24px 22px;
+}
+
+.info-dialog-content h3 {
+  margin: 0 0 18px;
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.info-dialog-content p {
+  margin: 0 0 14px;
+  color: #555555;
+  font-size: 14px;
+  line-height: 1.75;
+  word-break: keep-all;
+}
+
+.info-dialog-content p:last-of-type {
+  margin-bottom: 22px;
+}
+
+.dialog-close-button {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 12px;
+  background: #222222;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dialog-close-button:hover,
+.dialog-close-button:focus-visible {
+  background: #444444;
+}
