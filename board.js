@@ -49,6 +49,7 @@
         row?.progressPercent ?? (completed ? 100 : 0)
       ),
       scores: row?.scoreCounts || {},
+      previousAchievementCount: Number(row?.previousAchievementCount ?? 0),
       completionStatus: row?.completionSection?.reviewStatus || row?.selfReviewStatus || null,
       completionScore: row?.completionSection?.finalScore ?? row?.selfReviewScore ?? null,
       selfReviewStatus: row?.selfReviewStatus || null,
@@ -63,6 +64,7 @@
       <tr>
         <td>${item.rank}</td>
         <td>${escapeHtml(item.name)}</td>
+        <td>🏆 ${item.previousAchievementCount > 0 ? item.previousAchievementCount : "-"}</td>
         <td>${item.targetHours}시간</td>
         <td>${item.progressPercent}%</td>
         <td>${score(item.scores, 100)}</td>
