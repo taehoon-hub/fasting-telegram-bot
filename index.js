@@ -47,6 +47,7 @@ const bot = new TelegramBot(TOKEN);
 const draft = new Map();
 
 const reminderLock = new Set();
+let reminderCheckerRunning = false;
 
 function firestoreMillis(value) {
   if (!value) return NaN;
@@ -55,6 +56,14 @@ function firestoreMillis(value) {
 }
 
 async function checkDueReminders() {
+
+  if (reminderCheckerRunning) {
+    console.log('Reminder checker skipped: previous run is still active');
+    return;
+  }
+
+  reminderCheckerRunning = true;
+
   console.log('Reminder checker started');
   const now = Date.now();
   const snapshot = await db.collection('liveSessions')
@@ -84,6 +93,25 @@ async function checkDueReminders() {
         nextReminderAt: null,
         updatedAt: FieldValue.serverTimestamp()
       });
+
+      await db.collection('completedSessions').doc(session.id).set({
+        id: session.id,
+        telegramUserId: session.telegramUserId,
+        telegramChatId: session.telegramChatId,
+        name: session.name,
+        groupTag: session.groupTag,
+        targetHours: session.targetHours,
+        startedAt: session.startedAt,
+        completedAt: FieldValue.serverTimestamp(),
+        boardExpireAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        progressPercent: 100,
+        status: 'completed',
+        completionType: 'autoCompleted',
+        selfReviewStatus: 'pending',
+        selfReviewScore: null,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
 
       await bot.sendMessage(
         session.telegramChatId,
@@ -203,6 +231,33 @@ function progressMessage(session) {
     next = `${reminderTime} (${remainingMinutes}분 후)`;
   }
   return `공복 진행 중입니다.\n\n이름: ${session.name}\n그룹: ${session.groupTag}\n목표: ${session.targetHours} hours\n\n경과 시간: ${Math.floor(elapsed / 60)}시간 ${elapsed % 60}분\n\n남은 시간: ${Math.floor(remaining / 60)}시간 ${remaining % 60}분\n\n다음 알림: ${next}`;
+}
+
+async function getPreviousAchievementCount(userId, beforeDate = new Date()) {
+  const snapshot = await db.collection('completedSessions')
+    .where('telegramUserId', '==', String(userId))
+    .get();
+
+  const completed = snapshot.docs
+    .map((document) => document.data())
+    .filter((session) => {
+      const completedAt = firestoreMillis(session.completedAt);
+      return Number.isFinite(completedAt) && completedAt <= beforeDate.getTime();
+    })
+    .sort((a, b) => {
+      const aTime = firestoreMillis(a.completedAt) || 0;
+      const bTime = firestoreMillis(b.completedAt) || 0;
+      return bTime - aTime;
+    });
+
+  if (completed.length === 0) return 0;
+
+  const latestCompletedAt = firestoreMillis(completed[0].completedAt);
+  const within24Hours =
+    Number.isFinite(latestCompletedAt) &&
+    beforeDate.getTime() - latestCompletedAt <= 24 * 60 * 60 * 1000;
+
+  return within24Hours ? completed.length : 0;
 }
 
 async function findSession(chatId, userId) {
@@ -369,8 +424,9 @@ bot.on('callback_query', async (query) => {
         return;
       }
 
-      const sessionId = `${chatId}_${query.from.id}`;
-      const sessionRef = db.collection('liveSessions').doc(sessionId);
+      const sessionRef = db.collection('liveSessions').doc();
+      const sessionId = sessionRef.id;
+      const previousAchievementCount = await getPreviousAchievementCount(query.from.id);
       const groupRef = db.collection('groups').doc(groupTag);
       const activeQuery = db.collection('liveSessions')
         .where('groupTag', '==', groupTag)
@@ -408,6 +464,7 @@ bot.on('callback_query', async (query) => {
 
           transaction.set(sessionRef, {
             id: sessionId,
+            previousAchievementCount,
             telegramChatId: String(chatId),
             telegramUserId: String(query.from.id),
             name,
@@ -528,8 +585,9 @@ bot.on('callback_query', async (query) => {
         return;
       }
 
-      const sessionId = `${chatId}_${query.from.id}`;
-      const sessionRef = db.collection('liveSessions').doc(sessionId);
+      const sessionRef = db.collection('liveSessions').doc();
+      const sessionId = sessionRef.id;
+      const previousAchievementCount = await getPreviousAchievementCount(query.from.id);
       const groupRef = db.collection('groups').doc(groupTag);
       const activeQuery = db.collection('liveSessions')
         .where('groupTag', '==', groupTag)
@@ -567,6 +625,7 @@ bot.on('callback_query', async (query) => {
 
           transaction.set(sessionRef, {
             id: sessionId,
+            previousAchievementCount,
             telegramChatId: String(chatId),
             telegramUserId: String(query.from.id),
             name,
@@ -646,8 +705,9 @@ bot.on('callback_query', async (query) => {
         return;
       }
 
-      const sessionId = `${chatId}_${query.from.id}`;
-      const sessionRef = db.collection('liveSessions').doc(sessionId);
+      const sessionRef = db.collection('liveSessions').doc();
+      const sessionId = sessionRef.id;
+      const previousAchievementCount = await getPreviousAchievementCount(query.from.id);
       const groupRef = db.collection('groups').doc(groupTag);
       const activeQuery = db.collection('liveSessions')
         .where('groupTag', '==', groupTag)
@@ -683,6 +743,7 @@ bot.on('callback_query', async (query) => {
           }, { merge: true });
 
           transaction.set(sessionRef, {
+            previousAchievementCount,
             telegramChatId: String(chatId),
             telegramUserId: String(query.from.id),
             name,
@@ -902,7 +963,7 @@ bot.on('callback_query', async (query) => {
       const [, value, sessionId] = data.split(':');
       const session = await findSession(chatId, query.from.id);
       if (!session || session.id !== sessionId) return;
-      const ref = db.collection('liveSessions').doc(String(chatId) + '_' + String(query.from.id));
+      const ref = db.collection('liveSessions').doc(session.id);
 
       if (value === 'off') {
         await ref.update({ alertsEnabled: false, nextReminderAt: null, updatedAt: FieldValue.serverTimestamp() });
@@ -1250,6 +1311,7 @@ app.listen(PORT, '0.0.0.0', () => {
     console.error('startup board snapshot refresh error:', error);
   });
 });
+
 
 
 
