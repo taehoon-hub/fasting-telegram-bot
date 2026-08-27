@@ -177,7 +177,7 @@ async function checkDueReminders() {
       } else {
         await bot.sendMessage(
           session.telegramChatId,
-          '현재 공복 상태를 확인하고 점수를 선택해 주세요.',
+          '방금까지의 공복 여정을 돌이켜보고,\n점수를 선택해 주세요.',
           { reply_markup: scoreKeyboard(session.id) }
         );
 
@@ -919,7 +919,7 @@ bot.on('callback_query', async (query) => {
       });
 
       await bot.editMessageText(
-        '현재 점수 ' + score + ' 저장 완료.\n\n다음 알림 타이머도 선택해 주세요.',
+        '현재 점수 ' + score + ' 저장 완료.\n(현황판에서는 다음 업데이트때 반영됩니다)\n\n다음 알림 타이머도 선택해 주세요.',
         {
           chat_id: chatId,
           message_id: messageId,
