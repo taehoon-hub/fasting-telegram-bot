@@ -919,7 +919,7 @@ bot.on('callback_query', async (query) => {
       });
 
       await bot.editMessageText(
-        '현재 점수 ' + score + ' 저장 완료.',
+        '현재 점수 ' + score + ' 저장 완료.\n\n다음 알림 타이머도 선택해 주세요.',
         {
           chat_id: chatId,
           message_id: messageId,
