@@ -350,7 +350,6 @@ bot.onText(/^\/start$/, async (msg) => {
     await bot.sendMessage(msg.chat.id, '\uC548\uB155\uD558\uC138\uC694.\n\n\uC5EC\uB7EC\uBD84\uC758 \uACF5\uBCF5 \uC5EC\uC815\uC744 \uD568\uAED8 \uD558\uACA0\uC2B5\uB2C8\uB2E4', {
       reply_markup: keyboard([
         [button('\uACF5\uBCF5 \uC2DC\uC791', 'start_fasting')],
-        [webAppButton(msg.chat.id)],
         [button('도움말', 'help')]
       ])
     });
@@ -561,7 +560,7 @@ bot.on('callback_query', async (query) => {
     if (data === 'help') {
       await bot.sendMessage(
         chatId,
-        '사용 방법\n\n1. 공복 시작 버튼을 누릅니다.\n2. 이름_그룹 형식으로 입력합니다.\n3. 공복 시간을 선택합니다.'
+                '📖 안녕하세요? 반갑습니다.\n\n1️⃣ [공복 시작] 버튼을 눌러요\n2️⃣ "이름_그룹" 형식으로 입력해요\n   (예: 부자_서울, 미니_부산)\n3️⃣ 목표 공복 시간을 선택해요 (12/14/16/18/20 시간)\n\n💡 팁\n-  중간중간 알림이 오면 점수를 선택해 주세요\n-  점수는 보여주기 위한 것이 아니라, 본인의 공복 여정을 돌이켜보기 위함이에요.\n-  현황판에서 다른 사람의 공복 여정도 확인할 수 있어요.\n\n즐거운 공복 챌린지 되세요! 🎉'
       );
 
       return;
