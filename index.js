@@ -230,7 +230,7 @@ function progressMessage(session) {
     const reminderTime = reminderDate.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: 'numeric', minute: '2-digit', hourCycle: 'h23' }).replace(':', '시 ') + '분';
     next = `${reminderTime} (${remainingMinutes}분 후)`;
   }
-  return `공복 진행 중입니다.\n\n이름: ${session.name}\n그룹: ${session.groupTag}\n목표: ${session.targetHours} 시간\n\n경과 시간: ${Math.floor(elapsed / 60)}시간 ${elapsed % 60}분\n\n남은 시간: ${Math.floor(remaining / 60)}시간 ${remaining % 60}분\n\n다음 알림: \${next}`;
+  return `공복 진행 중입니다.\n\n이름: ${session.name}\n그룹: ${session.groupTag}\n목표: ${session.targetHours} 시간\n\n경과 시간: ${Math.floor(elapsed / 60)}시간 ${elapsed % 60}분\n\n남은 시간: ${Math.floor(remaining / 60)}시간 ${remaining % 60}분\n\n다음 알림: ${next}`;
 }
 
 async function getPreviousAchievementCount(userId, beforeDate = new Date()) {
