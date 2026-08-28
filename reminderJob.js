@@ -1,4 +1,4 @@
-require('dotenv').config();
+﻿require('dotenv').config();
 
 const { generateGroupSnapshot } = require('./boardService');
 
@@ -10,14 +10,14 @@ const scoreKeyboard = {
   reply_markup: {
     inline_keyboard: [
       [
-        { text: '100점', callback_data: 'fast_score_100' },
-        { text: '95점', callback_data: 'fast_score_95' }
+        { text: '100??, callback_data: 'fast_score_100' },
+        { text: '95??, callback_data: 'fast_score_95' }
       ],
       [
-        { text: '90점', callback_data: 'fast_score_90' },
-        { text: '80점', callback_data: 'fast_score_80' }
+        { text: '90??, callback_data: 'fast_score_90' },
+        { text: '80??, callback_data: 'fast_score_80' }
       ],
-      [{ text: '알림 끄기', callback_data: 'fast_alert_off' }]
+      [{ text: '?뚮┝ ?꾧린', callback_data: 'fast_alert_off' }]
     ]
   }
 };
@@ -26,14 +26,14 @@ const reviewKeyboard = {
   reply_markup: {
     inline_keyboard: [
       [
-        { text: '100점', callback_data: 'fast_review_100' },
-        { text: '95점', callback_data: 'fast_review_95' }
+        { text: '100??, callback_data: 'fast_review_100' },
+        { text: '95??, callback_data: 'fast_review_95' }
       ],
       [
-        { text: '90점', callback_data: 'fast_review_90' },
-        { text: '80점', callback_data: 'fast_review_80' }
+        { text: '90??, callback_data: 'fast_review_90' },
+        { text: '80??, callback_data: 'fast_review_80' }
       ],
-      [{ text: '알림 끄기', callback_data: 'fast_alert_off' }]
+      [{ text: '?뚮┝ ?꾧린', callback_data: 'fast_alert_off' }]
     ]
   }
 };
@@ -41,9 +41,9 @@ const reviewKeyboard = {
 const completedKeyboard = {
   reply_markup: {
     inline_keyboard: [
-      [{ text: '다음 공복 시작', callback_data: 'fast_start' }],
-      [{ text: '현황판 보기', callback_data: 'fast_board' }],
-      [{ text: '공유하기', switch_inline_query: '공복 목표를 달성했어요🎉' }]
+      [{ text: '?ㅼ쓬 怨듬났 ?쒖옉', callback_data: 'fast_start' }],
+      [{ text: '?꾪솴??蹂닿린', callback_data: 'fast_board' }],
+      [{ text: '怨듭쑀?섍린', switch_inline_query: '怨듬났 紐⑺몴瑜??ъ꽦?덉뼱?뷃윃? }]
     ]
   }
 };
@@ -89,7 +89,7 @@ async function completeSession(bot, db, document, session) {
 
   await bot.sendMessage(
     session.chatId,
-    '목표 시간 공복을 달성하셨습니다🎉\n대단해요👍\n\n이제 본인검수와 최종점수를 입력해 주세요.\n\n이벤트나 챌린지에 참여 중이라면 검수완료와 최종점수가 입력되어야 기록이 완성되고 참여 조건을 충족할 수 있습니다.\n\n점수 선택은 다른 사람에게 평가받기 위한 것이 아니라, 공복 여정을 돌아보는 메타인지 시간입니다. 여러분만의 전담코치라고 생각하고 잘 활용해 주세요.',
+    '紐⑺몴 ?쒓컙 怨듬났???ъ꽦?섏뀲?듬땲?ㆀ윃?n??⑦빐?뷃윉?n\n?댁젣 蹂몄씤寃?섏? 理쒖쥌?먯닔瑜??낅젰??二쇱꽭??\n\n?대깽?몃굹 梨뚮┛吏??李몄뿬 以묒씠?쇰㈃ 寃?섏셿猷뚯? 理쒖쥌?먯닔媛 ?낅젰?섏뼱??湲곕줉???꾩꽦?섍퀬 李몄뿬 議곌굔??異⑹”?????덉뒿?덈떎.\n\n?먯닔 ?좏깮? ?ㅻⅨ ?щ엺?먭쾶 ?됯?諛쏄린 ?꾪븳 寃껋씠 ?꾨땲?? 怨듬났 ?ъ젙???뚯븘蹂대뒗 硫뷀??몄? ?쒓컙?낅땲?? ?щ윭遺꾨쭔???꾨떞肄붿튂?쇨퀬 ?앷컖?섍퀬 ???쒖슜??二쇱꽭??',
     reviewKeyboard
   );
 }
@@ -97,7 +97,7 @@ async function completeSession(bot, db, document, session) {
 async function sendFirstCheckin(bot, document, session) {
   await bot.sendMessage(
     session.chatId,
-    '설정하신 체크 시간입니다.\n\n지금까지의 공복 여정에 점수를 주세요.',
+    '?ㅼ젙?섏떊 泥댄겕 ?쒓컙?낅땲??\n\n吏湲덇퉴吏??怨듬났 ?ъ젙???먯닔瑜?二쇱꽭??',
     scoreKeyboard
   );
 
@@ -113,7 +113,7 @@ async function sendRepeatCheckin(bot, document, session) {
   try {
     await bot.sendMessage(
       session.chatId,
-      '설정하신 체크 시간입니다.\n\n지금까지의 공복 여정에 점수를 주세요.',
+      '공복 시작 후 첫 체크인 시간입니다.\n\n점수 선택 팝을 보셔도 되고\n여러분만의 방식대로 하셔도 됩니다 :)',
       scoreKeyboard
     );
 
@@ -147,9 +147,9 @@ async function generateAllGroupSnapshots(db) {
   for (const groupTag of groupTags) {
     try {
       await generateGroupSnapshot(db, groupTag);
-      console.log(`현황판 스냅샷 생성 완료 - group: ${groupTag}`);
+      console.log(`?꾪솴???ㅻ깄???앹꽦 ?꾨즺 - group: ${groupTag}`);
     } catch (error) {
-      console.error(`현황판 스냅샷 생성 오류 - group: ${groupTag}`, error.message);
+      console.error(`?꾪솴???ㅻ깄???앹꽦 ?ㅻ쪟 - group: ${groupTag}`, error.message);
     }
   }
 }
@@ -158,8 +158,8 @@ function startReminderJob(bot, db) {
   let lastSnapshotAt = 0;
   const snapshotIntervalMs = BOARD_SNAPSHOT_MINUTES * 60 * 1000;
 
-  console.log(`알림 작업 시작 - 첫 체크인: ${FIRST_CHECKIN_MINUTES}분`);
-  console.log(`현황판 자동 갱신 시작 - ${BOARD_SNAPSHOT_MINUTES}분마다`);
+  console.log(`?뚮┝ ?묒뾽 ?쒖옉 - 泥?泥댄겕?? ${FIRST_CHECKIN_MINUTES}遺?);
+  console.log(`?꾪솴???먮룞 媛깆떊 ?쒖옉 - ${BOARD_SNAPSHOT_MINUTES}遺꾨쭏??);
 
   setInterval(async () => {
     try {
@@ -209,7 +209,7 @@ function startReminderJob(bot, db) {
         }
       }
     } catch (error) {
-      console.error('알림 작업 오류:', error.message);
+      console.error('?뚮┝ ?묒뾽 ?ㅻ쪟:', error.message);
     }
   }, LOOP_INTERVAL_MS);
 }

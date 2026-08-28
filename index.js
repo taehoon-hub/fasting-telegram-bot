@@ -47,6 +47,7 @@ const bot = new TelegramBot(TOKEN);
 const draft = new Map();
 
 const reminderLock = new Set();
+let reminderCheckerRunning = false;
 
 function firestoreMillis(value) {
   if (!value) return NaN;
@@ -56,7 +57,12 @@ function firestoreMillis(value) {
 
 async function checkDueReminders() {
 
+  if (reminderCheckerRunning) {
+    console.log('Reminder checker skipped: previous run is still active');
+    return;
+  }
 
+  reminderCheckerRunning = true;
 
   console.log('Reminder checker started');
   const now = Date.now();
@@ -148,8 +154,10 @@ async function checkDueReminders() {
         await bot.sendMessage(
           session.telegramChatId,
           "\uACF5\uBCF5 \uC2DC\uC791 \uD6C4 \uCCAB \uCCB4\uD06C\uC778 \uC2DC\uAC04\uC785\uB2C8\uB2E4.\n\n" +
-          "\uC810\uC218 \uC120\uD0DD \uD31D\uC744 \uBCF4\uC168\uB3C4 \uB418\uACE0\n" +
-          "\uC5EC\uB7EC\uBD84\uB9CC\uC758 \uBC29\uC2DD\uB300\uB85C \uD558\uC168\uB3C4 \uB429\uB2C8\uB2E4 :)",
+          "\uC9C0\uAE08\uAE4C\uC9C0\uC758 \uACF5\uBCF5 \uC5EC\uC815\uC740 \uC5B4\uB5A0\uC168\uB098\uC694?\n" +
+          "\uD604\uC7AC \uC0C1\uD0DC\uC5D0 \uAC00\uAE4C\uC6B4 \uC810\uC218\uB97C \uC120\uD0DD\uD574 \uC8FC\uC138\uC694.\n\n" +
+          "\uC774 \uC810\uC218\uB294 \uB2E4\uB978 \uC0AC\uB78C\uC744 \uD3C9\uAC00\uD558\uAE30 \uC704\uD55C \uAC83\uC774 \uC544\uB2C8\uB77C, " +
+          "\uBCF8\uC778\uC758 \uACF5\uBCF5 \uAE30\uB85D\uC744 \uC704\uD55C \uAC83\uC785\uB2C8\uB2E4.",
           {
             reply_markup: scoreKeyboard(session.id)
           }
@@ -552,18 +560,9 @@ bot.on('callback_query', async (query) => {
     if (data === 'help') {
       await bot.sendMessage(
         chatId,
-        '📖 안녕하세요? 반갑습니다.\n\n' +
-        '1️⃣ [공복 시작] 버튼을 눌러요\n' +
-        '2️⃣ "이름_그룹" 형식으로 입력해요\n' +
-        '   (예: 부자_서울, 미니_부산)\n' +
-        '3️⃣ 목표 공복 시간을 선택해요 (12/14/16/18/20 시간)\n\n' +
-        '💡 팁\n' +
-        '• 중간중간 알림이 오면 점수를 선택해 주세요\n' +
-        '• 점수는 누군가에게 보여주기 위한 것이 아니라,\n' +
-        '본인의 공복 여정을 돌이켜보기 위함이에요.\n' +
-        '• 현황판에서 본인과 다른 사람의 공복 여정을 확인할 수 있어요\n\n' +
-        '즐거운 공복 챌린지 되세요! 🎉'
+                '📖 안녕하세요? 반갑습니다.\n\n1️⃣ [공복 시작] 버튼을 눌러요\n2️⃣ "이름_그룹" 형식으로 입력해요\n   (예: 부자_서울, 미니_부산)\n3️⃣ 목표 공복 시간을 선택해요 (12/14/16/18/20 시간)\n\n💡 팁\n-  중간중간 알림이 오면 점수를 선택해 주세요\n-  점수는 보여주기 위한 것이 아니라, 본인의 공복 여정을 돌이켜보기 위함이에요.\n-  현황판에서 다른 사람의 공복 여정도 확인할 수 있어요.\n\n즐거운 공복 챌린지 되세요! 🎉'
       );
+
       return;
     }
 
