@@ -1,0 +1,246 @@
+/* BOARD CSS VERSION: 20260819-2315 */
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: light;
+  --page-bg: #f5f5f5;
+  --card-bg: #ffffff;
+  --section-bg: #fafafa;
+  --button-bg: #e9e9e9;
+  --text: #202020;
+  --muted: #777777;
+  --line: #e2e2e2;
+  --shadow: 0 6px 22px rgba(0, 0, 0, 0.06);
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--page-bg);
+  color: var(--text);
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Apple SD Gothic Neo",
+    "Noto Sans KR",
+    sans-serif;
+  line-height: 1.5;
+}
+
+button {
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.board-shell {
+  width: min(100% - 32px, 720px);
+  margin: 24px auto;
+  padding: 30px;
+  background: var(--card-bg);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+}
+
+.board-header {
+  margin-bottom: 24px;
+}
+
+.board-header h1 {
+  margin: 0 0 14px;
+  font-size: clamp(30px, 7vw, 42px);
+  letter-spacing: -0.07em;
+}
+
+.board-header h1 span {
+  margin-left: 8px;
+  color: #999;
+  font-size: 0.48em;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+}
+
+.board-header p {
+  margin: 4px 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.board-note {
+  font-size: 13px !important;
+}
+
+.refresh-button,
+.back-button {
+  width: 100%;
+  min-height: 58px;
+  margin-top: 20px;
+  border-radius: 17px;
+  background: var(--button-bg);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.refresh-button:active,
+.back-button:active {
+  transform: scale(0.99);
+}
+
+.board-card {
+  margin-top: 22px;
+  padding: 24px 20px 20px;
+  overflow: hidden;
+  background: var(--section-bg);
+  border-radius: 22px;
+}
+
+.board-card h2 {
+  margin: 0;
+  font-size: clamp(22px, 5vw, 29px);
+  letter-spacing: -0.06em;
+}
+
+#active-count {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.section-description {
+  margin: 18px 0;
+  color: var(--muted);
+}
+
+.status-box {
+  padding: 12px 0;
+  color: var(--muted);
+}
+
+.status-box.error {
+  color: #b42318;
+}
+
+.desktop-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.board-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 14px;
+}
+
+.board-table th,
+.board-table td {
+  padding: 10px 5px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.board-table th:nth-child(2),
+.board-table td:nth-child(2) {
+  text-align: left;
+}
+
+.board-table th {
+  color: #777;
+  font-weight: 500;
+}
+
+.board-table td {
+  font-weight: 500;
+}
+
+.mobile-list {
+  display: none;
+}
+
+.mobile-card {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.mobile-card:last-child {
+  border-bottom: 0;
+}
+
+.mobile-card-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mobile-card-name {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.mobile-card-percent {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.mobile-card-meta {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.mobile-scores {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.mobile-score {
+  padding: 7px 2px;
+  border-radius: 8px;
+  background: #eeeeee;
+  text-align: center;
+  font-size: 12px;
+}
+
+.mobile-score strong {
+  display: block;
+  font-size: 15px;
+}
+
+.back-button {
+  margin-top: 24px;
+}
+
+@media (max-width: 600px) {
+  .board-shell {
+    width: calc(100% - 24px);
+    margin: 12px auto;
+    padding: 22px 18px;
+    border-radius: 24px;
+  }
+
+  .board-card {
+    padding: 20px 16px 16px;
+    border-radius: 20px;
+  }
+
+  .desktop-table-wrap {
+    display: none;
+  }
+
+  .mobile-list {
+    display: block;
+  }
+}

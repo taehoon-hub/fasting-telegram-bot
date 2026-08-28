@@ -1,0 +1,240 @@
+console.log('BOARD JS VERSION: 20260819-2315');
+console.log('BOARD JS VERSION: 20260819-2315');
+
+(() => {
+  const tg = window.Telegram?.WebApp;
+
+  if (tg) {
+    tg.ready();
+    tg.expand();
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const group = params.get("group") || "";
+
+  const el = {
+    group: document.getElementById("group-label"),
+    updated: document.getElementById("board-updated"),
+    refresh: document.getElementById("refresh-button"),
+    loading: document.getElementById("loading-box"),
+    error: document.getElementById("error-box"),
+    active: document.getElementById("active-section"),
+    activeCount: document.getElementById("active-count"),
+    activeBody: document.getElementById("active-body"),
+    activeMobile: document.getElementById("active-mobile-list"),
+    completedBody: document.getElementById("completed-body"),
+    completedMobile: document.getElementById("completed-mobile-list"),
+    completedEmpty: document.getElementById("completed-empty"),
+    empty: document.getElementById("empty-box"),
+    back: document.getElementById("back-button")
+  };
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
+
+  function score(scores, key) {
+    return Number(scores?.[key] ?? scores?.[String(key)] ?? 0);
+  }
+
+  function normalize(row, index, completed = false) {
+    return {
+      rank: Number(row?.rank || index + 1),
+      name: String(row?.name || "???藥???怨몃쾳"),
+      targetHours: Number(row?.targetHours || 0),
+      progressPercent: Number(
+        row?.progressPercent || (completed ? 100 : 0)
+      ),
+      scores: row?.scoreCounts || {},
+      selfReviewStatus: row?.selfReviewStatus || null,
+      selfReviewScore: row?.selfReviewScore ?? null
+    };
+  }
+
+  function activeTableRow(row, index) {
+    const item = normalize(row, index);
+
+    return `
+      <tr>
+        <td>${item.rank}</td>
+        <td>${escapeHtml(item.name)}</td>
+        <td>${item.targetHours}</td>
+        <td>${item.progressPercent}%</td>
+        <td>${score(item.scores, 100)}</td>
+        <td>${score(item.scores, 95)}</td>
+        <td>${score(item.scores, 90)}</td>
+        <td>${score(item.scores, 80)}</td>
+      </tr>
+    `;
+  }
+
+  function completedTableRow(row, index) {
+    const item = normalize(row, index, true);
+    const review =
+      item.selfReviewStatus === "completed"
+        ? `?熬곣뫁??{item.selfReviewScore ? ` 鸚?${item.selfReviewScore}?? : ""}`
+        : "???リ옇?ｅㅇ?;
+
+    return `
+      <tr>
+        <td>${escapeHtml(item.name)}</td>
+        <td>${item.targetHours}</td>
+        <td>${score(item.scores, 100)}</td>
+        <td>${score(item.scores, 95)}</td>
+        <td>${score(item.scores, 90)}</td>
+        <td>${score(item.scores, 80)}</td>
+        <td>${review}</td>
+      </tr>
+    `;
+  }
+
+  function mobileCard(row, index, completed = false) {
+    const item = normalize(row, index, completed);
+    const title = completed
+      ? escapeHtml(item.name)
+      : `${item.rank}??鸚?${escapeHtml(item.name)}`;
+
+    const percent = completed ? "???? : `${item.progressPercent}%`;
+
+    const review = completed
+      ? `
+        <div class="mobile-card-meta">
+          ?롪틵???
+          ${
+            item.selfReviewStatus === "completed"
+              ? `?熬곣뫁??{item.selfReviewScore ? ` 鸚?${item.selfReviewScore}?? : ""}`
+              : "???リ옇?ｅㅇ?
+          }
+        </div>
+      `
+      : "";
+
+    return `
+      <article class="mobile-card">
+        <div class="mobile-card-top">
+          <span class="mobile-card-name">${title}</span>
+          <span class="mobile-card-percent">${percent}</span>
+        </div>
+
+        <div class="mobile-card-meta">嶺뚮ㅄ維싷쭗?${item.targetHours}??蹂?뜟</div>
+        ${review}
+
+        <div class="mobile-scores">
+          <div class="mobile-score">100<strong>${score(item.scores, 100)}</strong></div>
+          <div class="mobile-score">95<strong>${score(item.scores, 95)}</strong></div>
+          <div class="mobile-score">90<strong>${score(item.scores, 90)}</strong></div>
+          <div class="mobile-score">80<strong>${score(item.scores, 80)}</strong></div>
+        </div>
+      </article>
+    `;
+  }
+
+  function formatDate(value) {
+    if (!value) return "?筌먦끉逾??? ???곷쾳";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "?筌먦끉逾??? ???곷쾳";
+    }
+
+    return date.toLocaleString("ko-KR", {
+      timeZone: "Asia/Seoul",
+      month: "numeric",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function render(data) {
+    const rows = Array.isArray(data.rows) ? data.rows : [];
+    const completed = Array.isArray(data.completed)
+      ? data.completed
+      : [];
+
+    el.group.textContent = data.group || group || "?熬곣뫕??;
+
+    el.updated.textContent =
+      `??⑥щ턄???リ옇??: ${formatDate(data.generatedAt)} 鸚?` +
+      `???깅쾳 ?띠룄??? ${formatDate(data.nextRefreshAt)}`;
+
+    el.activeCount.textContent = `${rows.length}嶺?;
+
+    el.activeBody.innerHTML = rows
+      .map(activeTableRow)
+      .join("");
+
+    el.activeMobile.innerHTML = rows
+      .map((row, index) => mobileCard(row, index))
+      .join("");
+
+    el.active.hidden = rows.length === 0;
+    el.empty.hidden = rows.length !== 0;
+
+    el.completedBody.innerHTML = completed
+      .map(completedTableRow)
+      .join("");
+
+    el.completedMobile.innerHTML = completed
+      .map((row, index) => mobileCard(row, index, true))
+      .join("");
+
+    el.completedEmpty.hidden = completed.length !== 0;
+  }
+
+  async function load() {
+    if (!group) {
+      el.loading.hidden = true;
+      el.error.hidden = false;
+      el.error.textContent = "?잙갭梨띄쳥??筌먲퐢沅뽪뤆?쎛 ??怨룸????덈펲.";
+      return;
+    }
+
+    el.loading.hidden = false;
+    el.error.hidden = true;
+
+    try {
+      const response = await fetch(
+        `/api/board?group=${encodeURIComponent(group)}`,
+        {
+          cache: "no-store",
+          headers: {
+            Accept: "application/json"
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      render(data);
+    } catch (error) {
+      el.error.hidden = false;
+      el.error.textContent =
+        "?熬곥굦????諭??釉띾쐞???? 嶺뚮쪇沅?쭛???鍮?? ??ル∥六??????곕뻣 ??類ｌ┣???낅슣?섋땻??";
+      console.error("board load error:", error);
+    } finally {
+      el.loading.hidden = true;
+    }
+  }
+
+  el.refresh?.addEventListener("click", load);
+
+  el.back?.addEventListener("click", () => {
+    if (tg?.close) {
+      tg.close();
+    } else {
+      window.history.back();
+    }
+  });
+
+  load();
+})();

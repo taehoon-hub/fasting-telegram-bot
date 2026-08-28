@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>공복마스터 현황판</title>
+  <link rel="stylesheet" href="/board.css">
+</head>
+<body>
+  <main class="board-shell">
+    <header class="board-header">
+      <h1>현황판 <span id="group-label">그룹 확인 중</span></h1>
+      <p id="board-updated">데이터 기준: 확인 중...</p>
+      <p class="board-note">실시간 진행자 포함 · 정기자료는 매시 정각과 30분에 갱신됩니다.</p>
+      <button id="refresh-button" class="refresh-button" type="button">최신 정기자료 확인</button>
+    </header>
+
+    <section class="board-card" aria-labelledby="active-title">
+      <h2 id="active-title">현재 진행 순위 <span id="active-count">0명</span></h2>
+
+      <div id="loading-box" class="status-box">현황판을 불러오는 중...</div>
+      <div id="error-box" class="status-box error" hidden></div>
+      <div id="empty-box" class="status-box" hidden>현재 진행 중인 공복 데이터가 없습니다.</div>
+
+      <div id="active-section" hidden>
+        <div class="desktop-table-wrap">
+          <table class="board-table">
+            <thead>
+              <tr>
+                <th>순위</th>
+                <th>이름</th>
+                <th>목표</th>
+                <th>%</th>
+                <th>100</th>
+                <th>95</th>
+                <th>90</th>
+                <th>80</th>
+              </tr>
+            </thead>
+            <tbody id="active-body"></tbody>
+          </table>
+        </div>
+
+        <div id="active-mobile-list" class="mobile-list"></div>
+      </div>
+    </section>
+
+    <section class="board-card" aria-labelledby="completed-title">
+      <h2 id="completed-title">공복 목표 달성</h2>
+      <p class="section-description">24시간 내 목표 달성자를 보여줍니다.</p>
+
+      <div class="desktop-table-wrap">
+        <table class="board-table completed-table">
+          <thead>
+            <tr>
+              <th>이름</th>
+              <th>목표</th>
+              <th>100</th>
+              <th>95</th>
+              <th>90</th>
+              <th>80</th>
+              <th>검수</th>
+            </tr>
+          </thead>
+          <tbody id="completed-body"></tbody>
+        </table>
+      </div>
+
+      <div id="completed-mobile-list" class="mobile-list"></div>
+      <p id="completed-empty" class="status-box">24시간 내 목표 달성자가 없습니다.</p>
+    </section>
+
+    <button id="back-button" class="back-button" type="button">돌아가기</button>
+  </main>
+
+  <script src="/board.js" defer></script>
+</body>
+</html>

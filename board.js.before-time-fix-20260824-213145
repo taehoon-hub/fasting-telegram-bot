@@ -25,6 +25,7 @@
     completedMobile: document.getElementById("completed-mobile-list"),
     completedEmpty: document.getElementById("completed-empty"),
     empty: document.getElementById("empty-box"),
+    back: document.getElementById("back-button")
   };
 
   function escapeHtml(value) {
@@ -49,7 +50,6 @@
         row?.progressPercent ?? (completed ? 100 : 0)
       ),
       scores: row?.scoreCounts || {},
-      previousAchievementCount: Number(row?.previousAchievementCount ?? 0),
       completionStatus: row?.completionSection?.reviewStatus || row?.selfReviewStatus || null,
       completionScore: row?.completionSection?.finalScore ?? row?.selfReviewScore ?? null,
       selfReviewStatus: row?.selfReviewStatus || null,
@@ -64,8 +64,7 @@
       <tr>
         <td>${item.rank}</td>
         <td>${escapeHtml(item.name)}</td>
-        <td>🏆 ${item.previousAchievementCount > 0 ? item.previousAchievementCount : '--'}</td>
-        <td>${item.targetHours}시간</td>
+        <td>${item.targetHours}</td>
         <td>${item.progressPercent}%</td>
         <td>${score(item.scores, 100)}</td>
         <td>${score(item.scores, 95)}</td>
@@ -83,8 +82,7 @@
     return `
       <tr>
         <td>${escapeHtml(item.name)}</td>
-        <td>🏆 ${item.previousAchievementCount > 0 ? item.previousAchievementCount : '--'}</td>
-        <td>${item.targetHours}시간</td>
+        <td>${item.targetHours}</td>
         <td>${selectedScore === 100 ? "❤️" : ""}</td>
         <td>${selectedScore === 95 ? "❤️" : ""}</td>
         <td>${selectedScore === 90 ? "❤️" : ""}</td>
@@ -109,7 +107,7 @@
         <div class="mobile-card-meta">
           \uAC80\uC218:
           ${
-            item.completionStatus === "reviewCompleted"
+            item.selfReviewStatus === "completed"
               ? "\uC644\uB8CC" +
                 (item.selfReviewScore
                   ? ` \u00B7 ${item.selfReviewScore}\uC810`
@@ -128,7 +126,7 @@
         </div>
 
         <div class="mobile-card-meta">
-          \uD2B8\uB85C\uD53C ${item.previousAchievementCount > 0 ? item.previousAchievementCount : '--'}\uD68C \u00B7 \uBAA9\uD45C ${item.targetHours}\uC2DC\uAC04
+          \uBAA9\uD45C ${item.targetHours}\uC2DC\uAC04
         </div>
 
         ${review}
@@ -144,31 +142,23 @@
   }
 
   function formatDate(value) {
-    if (!value) return "업데이트 준비 중";
-
-    let date;
-
-    if (typeof value?.toDate === "function") {
-      date = value.toDate();
-    } else if (typeof value?.seconds === "number") {
-      date = new Date(
-        Number(value.seconds) * 1000 +
-        Math.floor(Number(value.nanoseconds || 0) / 1000000)
-      );
-    } else {
-      date = new Date(value);
+    if (!value) {
+      return "\uD655\uC778\uB418\uC9C0 \uC54A\uC74C";
     }
 
-    if (Number.isNaN(date.getTime())) return "업데이트 준비 중";
+    const date = new Date(value);
 
-    return new Intl.DateTimeFormat("ko-KR", {
+    if (Number.isNaN(date.getTime())) {
+      return "\uD655\uC778\uB418\uC9C0 \uC54A\uC74C";
+    }
+
+    return date.toLocaleString("ko-KR", {
       timeZone: "Asia/Seoul",
-      year: "numeric",
       month: "numeric",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit"
-    }).format(date);
+    });
   }
 
   function render(data) {
@@ -183,16 +173,12 @@
 
     if (el.updated) {
       el.updated.textContent =
-        `데이터 기준: ${formatDate(data.lastUpdatedAt)} · 매시 정각과 30분에 자동 갱신`
+        `\uB370\uC774\uD130 \uAE30\uC900: ${formatDate(data.generatedAt)} \u00B7 ` +
+        `\uB2E4\uC74C \uAC31\uC2E0: ${formatDate(data.nextRefreshAt)}`;
     }
 
     if (el.activeCount) {
       el.activeCount.textContent = `${rows.length}\uBA85`;
-
-    const completedCount = document.getElementById("completed-count");
-    if (completedCount) {
-      completedCount.textContent = `${completed.length}\uBA85`;
-    }
     }
 
     if (el.activeBody) {
@@ -273,20 +259,16 @@
 
   if (el.refresh) {
     el.refresh.addEventListener("click", load);
-
-  const openChatButton = document.getElementById("open-chat-button");
-
-  if (openChatButton) {
-    openChatButton.addEventListener("click", () => {
-      alert(
-        "오픈채팅방 개설 안내\n\n" +
-        "건전한 공복 목표 달성과 경험 공유를 위한 그룹 오픈채팅방입니다.\n\n" +
-        "개설 비용: 50,000원\n\n" +
-        "입금 확인 후 운영자가 해당 그룹의 오픈채팅방을 개설하고 입장 링크를 등록합니다.\n\n" +
-        "개설을 원하시면 운영자에게 문의해 주세요."
-      );
-    });
   }
+
+  if (el.back) {
+    el.back.addEventListener("click", () => {
+      if (tg?.close) {
+        tg.close();
+      } else {
+        window.history.back();
+      }
+    });
   }
 
   load();

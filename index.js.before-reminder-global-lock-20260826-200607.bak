@@ -55,9 +55,6 @@ function firestoreMillis(value) {
 }
 
 async function checkDueReminders() {
-
-
-
   console.log('Reminder checker started');
   const now = Date.now();
   const snapshot = await db.collection('liveSessions')
@@ -171,7 +168,7 @@ async function checkDueReminders() {
       } else {
         await bot.sendMessage(
           session.telegramChatId,
-          '방금까지의 공복 여정을 돌이켜보고,\n점수를 선택해 주세요.',
+          '현재 공복 상태를 확인하고 점수를 선택해 주세요.',
           { reply_markup: scoreKeyboard(session.id) }
         );
 
@@ -221,10 +218,10 @@ function progressMessage(session) {
   if (session.alertsEnabled !== false && session.nextReminderAt) {
     const reminderDate = session.nextReminderAt?.toDate ? session.nextReminderAt.toDate() : new Date(session.nextReminderAt);
     const remainingMinutes = Math.max(0, Math.ceil((reminderDate.getTime() - Date.now()) / 60000));
-    const reminderTime = reminderDate.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: 'numeric', minute: '2-digit', hourCycle: 'h23' }).replace(':', '시 ') + '분';
+    const reminderTime = reminderDate.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
     next = `${reminderTime} (${remainingMinutes}분 후)`;
   }
-  return `공복 진행 중입니다.\n\n이름: ${session.name}\n그룹: ${session.groupTag}\n목표: ${session.targetHours} 시간\n\n경과 시간: ${Math.floor(elapsed / 60)}시간 ${elapsed % 60}분\n\n남은 시간: ${Math.floor(remaining / 60)}시간 ${remaining % 60}분\n\n다음 알림: ${next}`;
+  return `공복 진행 중입니다.\n\n이름: ${session.name}\n그룹: ${session.groupTag}\n목표: ${session.targetHours} hours\n\n경과 시간: ${Math.floor(elapsed / 60)}시간 ${elapsed % 60}분\n\n남은 시간: ${Math.floor(remaining / 60)}시간 ${remaining % 60}분\n\n다음 알림: ${next}`;
 }
 
 async function getPreviousAchievementCount(userId, beforeDate = new Date()) {
@@ -913,7 +910,7 @@ bot.on('callback_query', async (query) => {
       });
 
       await bot.editMessageText(
-        '현재 점수 ' + score + ' 저장 완료.\n(현황판에서는 다음 업데이트때 반영됩니다)\n\n다음 알림 타이머도 선택해 주세요.',
+        '현재 점수 ' + score + ' 저장 완료.',
         {
           chat_id: chatId,
           message_id: messageId,
@@ -957,7 +954,7 @@ bot.on('callback_query', async (query) => {
       const [, value, sessionId] = data.split(':');
       const session = await findSession(chatId, query.from.id);
       if (!session || session.id !== sessionId) return;
-      const ref = db.collection('liveSessions').doc(session.id);
+      const ref = db.collection('liveSessions').doc(String(chatId) + '_' + String(query.from.id));
 
       if (value === 'off') {
         await ref.update({ alertsEnabled: false, nextReminderAt: null, updatedAt: FieldValue.serverTimestamp() });
@@ -1305,7 +1302,6 @@ app.listen(PORT, '0.0.0.0', () => {
     console.error('startup board snapshot refresh error:', error);
   });
 });
-
 
 
 

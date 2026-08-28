@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fasting Board</title>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #ffffff;
+      color: #111111;
+      font-family: Arial, sans-serif;
+    }
+
+    .app-shell {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .eyebrow {
+      color: #777777;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+
+    h1 {
+      margin: 4px 0;
+      font-size: 24px;
+    }
+
+    .updated {
+      color: #666666;
+      font-size: 14px;
+    }
+
+    .icon-button {
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 8px;
+      background: #2481cc;
+      color: #ffffff;
+      font-size: 14px;
+    }
+
+    .message {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      background: #f1f3f5;
+    }
+
+    .error {
+      background: #ffe3e3;
+      color: #c92a2a;
+    }
+
+    .board-section {
+      margin-top: 24px;
+    }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    .board-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    .board-table th,
+    .board-table td {
+      padding: 10px 6px;
+      border-bottom: 1px solid #dddddd;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">FASTING MASTER</p>
+        <h1 id="board-title">Fasting Board</h1>
+        <p id="board-updated" class="updated">Loading...</p>
+      </div>
+
+      <button id="refresh-button" class="icon-button" type="button">
+        Refresh
+      </button>
+    </header>
+
+    <div id="error-box" class="message error" hidden></div>
+    <div id="loading-box" class="message">Loading board...</div>
+
+    <section id="active-section" class="board-section" hidden>
+      <div class="section-heading">
+        <h2>Active Sessions</h2>
+        <span id="active-count"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="board-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Target</th>
+              <th>Progress</th>
+              <th>100</th>
+              <th>95</th>
+              <th>90</th>
+              <th>80</th>
+            </tr>
+          </thead>
+          <tbody id="active-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="completed-section" class="board-section" hidden>
+      <div class="section-heading">
+        <h2>Completed Sessions</h2>
+        <span id="completed-count"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="board-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Target</th>
+              <th>Progress</th>
+              <th>100</th>
+              <th>95</th>
+              <th>90</th>
+              <th>80</th>
+            </tr>
+          </thead>
+          <tbody id="completed-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div id="empty-box" class="message" hidden>
+      No active fasting sessions.
+    </div>
+  </main>
+
+  <script src="/board.js?v=20260817-5"></script>
+</body>
+</html>

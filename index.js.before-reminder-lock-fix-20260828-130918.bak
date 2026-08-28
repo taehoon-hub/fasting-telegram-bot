@@ -47,6 +47,7 @@ const bot = new TelegramBot(TOKEN);
 const draft = new Map();
 
 const reminderLock = new Set();
+let reminderCheckerRunning = false;
 
 function firestoreMillis(value) {
   if (!value) return NaN;
@@ -56,7 +57,12 @@ function firestoreMillis(value) {
 
 async function checkDueReminders() {
 
+  if (reminderCheckerRunning) {
+    console.log('Reminder checker skipped: previous run is still active');
+    return;
+  }
 
+  reminderCheckerRunning = true;
 
   console.log('Reminder checker started');
   const now = Date.now();

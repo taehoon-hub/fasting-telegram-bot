@@ -1,0 +1,127 @@
+﻿<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>&#44277;&#48373;&#47560;&#49828;&#53552; &#54788;&#54889;&#54032;</title>
+  <link rel="stylesheet" href="/board.css?v=2026081903">
+</head>
+<body>
+  <main class="board-shell">
+    <header class="board-header">
+      <h1>&#54788;&#54889;&#54032; <span id="group-label">&#44536;&#47353; &#54869;&#51064; &#51473;</span></h1>
+      <p id="board-updated">데이터 기준: 업데이트 준비 중</p>
+      <p class="board-note">진행 중인 참여자와 최근 24시간 내 목표 달성자를 표시합니다.<br>현황은 매시 정각과 30분에 자동 갱신됩니다.</p>
+      <button id="refresh-button" class="refresh-button" type="button">새로고침</button>
+    <section class="open-chat-card" aria-labelledby="open-chat-title">
+      <h2 id="open-chat-title">그룹 오픈채팅방</h2>
+      <p id="open-chat-description">
+        이 그룹은 아직 오픈채팅방이 개설되지 않았습니다.
+      </p>
+      <button id="open-chat-button" class="open-chat-button" type="button">
+        오픈채팅방 개설 안내
+      </button>
+    </section>
+    </header>
+
+    <section class="board-card" aria-labelledby="active-title">
+      <h2 id="active-title">&#54788;&#51116; &#51652;&#54665; &#49692;&#50948; <span id="active-count">0&#47749;</span></h2>
+
+      <div id="loading-box" class="status-box">&#54788;&#54889;&#54032;&#51012; &#48520;&#47084;&#50724;&#45716; &#51473;...</div>
+      <div id="error-box" class="status-box error" hidden></div>
+      <div id="empty-box" class="status-box" hidden>&#54788;&#51116; &#51652;&#54665; &#51473;&#51064; &#44277;&#48373; &#45936;&#51060;&#53552;&#44032; &#50630;&#49845;&#45768;&#45796;.</div>
+
+      <div id="active-section" hidden>
+        <div class="desktop-table-wrap">
+          <table class="board-table">
+            <thead>
+              <tr>
+                <th>&#49692;&#50948;</th>
+                <th>&#51060;&#47492;</th>
+                <th>&#47785;&#54364;</th>
+                <th>%</th>
+                <th>100</th>
+                <th>95</th>
+                <th>90</th>
+                <th>80</th>
+              </tr>
+            </thead>
+            <tbody id="active-body"></tbody>
+          </table>
+        </div>
+        <div id="active-mobile-list" class="mobile-list"></div>
+      </div>
+    </section>
+
+    <section class="board-card" aria-labelledby="completed-title">
+      <h2 id="completed-title" class="completed-heading">
+  <span>&#44277;&#48373; &#47785;&#54364; &#45804;&#49457;</span>
+  <span id="completed-count">0&#47749;</span>
+  <button
+    id="completed-info-button"
+    class="info-button"
+    type="button"
+    aria-label="공복 목표 달성 안내"
+  >ⓘ</button>
+</h2>
+      <p class="section-description">&#51060;&#51204; 24&#49884;&#44036; &#45236; &#47785;&#54364; &#45804;&#49457;&#51088;&#47484; &#48372;&#50668;&#51465;&#45768;&#45796;.</p>
+
+      <div class="desktop-table-wrap">
+        <table class="board-table completed-table">
+          <thead>
+            <tr>
+              <th>&#51060;&#47492;</th>
+              <th>&#47785;&#54364;</th>
+              <th>100</th>
+              <th>95</th>
+              <th>90</th>
+              <th>80</th>
+              <th>&#44160;&#49688;</th>
+            </tr>
+          </thead>
+          <tbody id="completed-body"></tbody>
+        </table>
+      </div>
+
+      <div id="completed-mobile-list" class="mobile-list"></div>
+      <p id="completed-empty" class="status-box">&#51060;&#51204; 24&#49884;&#44036; &#45236; &#47785;&#54364; &#45804;&#49457;&#51088;&#44032; &#50630;&#49845;&#45768;&#45796;.</p>
+    </section>
+
+  <dialog id="completed-info-dialog" class="info-dialog" aria-labelledby="completed-info-dialog-title">
+    <div class="info-dialog-content">
+      <h3 id="completed-info-dialog-title">&#44277;&#48373; &#47785;&#54364; &#45804;&#49457; &#50504;&#45236;</h3>
+      <p>&#51060;&#51204; 24&#49884;&#44036; &#45236; &#47785;&#54364; &#45804;&#49457;&#51088;&#47484; &#48372;&#50668;&#51465;&#45768;&#45796;.</p>
+      <p>&#47785;&#54364; &#45804;&#49457; &#54980; 24&#49884;&#44036; &#51060;&#45236;&#50640; &#45796;&#49884; &#44277;&#48373;&#51012; &#49884;&#51089;&#54616;&#47732; &#50672;&#49549; &#44277;&#48373;&#51077;&#45768;&#45796;.<br>&#51652;&#54665; &#49692;&#50948; &#47785;&#47197;&#50640;&#49436; &#50672;&#49549; &#54943;&#49688;&#44032; &#54632;&#44760; &#54364;&#49884;&#46121;&#45768;&#45796;.</p>
+      <p>&#54788;&#51116; &#51652;&#54665; &#51473;&#51064; &#52280;&#44032;&#51088;&#45716; &#50756;&#47308; &#47785;&#47197;&#50640; &#51473;&#48373; &#54364;&#49884;&#54616;&#51648; &#50506;&#44256;,<br>&#51652;&#54665; &#49692;&#50948;&#50640;&#49436; &#127942; &#54364;&#49884;&#47196; &#51060;&#51204; &#45804;&#49457; &#44592;&#47197;&#51012; &#50508;&#47140;&#46300;&#47549;&#45768;&#45796;.</p>
+      <form method="dialog">
+        <button class="dialog-close-button" type="submit">&#45803;&#44592;</button>
+      </form>
+    </div>
+  </dialog>
+  </main>
+
+  <script>
+    (() => {
+      const infoButton = document.getElementById("completed-info-button");
+      const infoDialog = document.getElementById("completed-info-dialog");
+
+      if (!infoButton || !infoDialog) return;
+
+      infoButton.addEventListener("click", () => {
+        if (typeof infoDialog.showModal === "function") {
+          infoDialog.showModal();
+        } else {
+          infoDialog.setAttribute("open", "");
+        }
+      });
+
+      infoDialog.addEventListener("click", (event) => {
+        if (event.target === infoDialog && typeof infoDialog.close === "function") {
+          infoDialog.close();
+        }
+      });
+    })();
+  </script>
+  <script src="/board.js?v=2026081903" defer></script>
+</body>
+</html>

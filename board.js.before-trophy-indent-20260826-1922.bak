@@ -49,7 +49,7 @@
         row?.progressPercent ?? (completed ? 100 : 0)
       ),
       scores: row?.scoreCounts || {},
-      previousAchievementCount: Number(row?.previousAchievementCount ?? 0),
+                               previousAchievementCount: Number(row?.previousAchievementCount ?? 0),
       completionStatus: row?.completionSection?.reviewStatus || row?.selfReviewStatus || null,
       completionScore: row?.completionSection?.finalScore ?? row?.selfReviewScore ?? null,
       selfReviewStatus: row?.selfReviewStatus || null,
@@ -64,7 +64,7 @@
       <tr>
         <td>${item.rank}</td>
         <td>${escapeHtml(item.name)}</td>
-        <td>🏆 ${item.previousAchievementCount > 0 ? item.previousAchievementCount : '--'}</td>
+        <td>🏆 ${item.previousAchievementCount > 0 ? item.previousAchievementCount : "-"}</td>
         <td>${item.targetHours}시간</td>
         <td>${item.progressPercent}%</td>
         <td>${score(item.scores, 100)}</td>
@@ -83,7 +83,6 @@
     return `
       <tr>
         <td>${escapeHtml(item.name)}</td>
-        <td>🏆 ${item.previousAchievementCount > 0 ? item.previousAchievementCount : '--'}</td>
         <td>${item.targetHours}시간</td>
         <td>${selectedScore === 100 ? "❤️" : ""}</td>
         <td>${selectedScore === 95 ? "❤️" : ""}</td>
@@ -128,7 +127,7 @@
         </div>
 
         <div class="mobile-card-meta">
-          \uD2B8\uB85C\uD53C ${item.previousAchievementCount > 0 ? item.previousAchievementCount : '--'}\uD68C \u00B7 \uBAA9\uD45C ${item.targetHours}\uC2DC\uAC04
+          \uBAA9\uD45C ${item.targetHours}\uC2DC\uAC04
         </div>
 
         ${review}

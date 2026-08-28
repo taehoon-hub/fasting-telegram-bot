@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>怨듬났留덉뒪???꾪솴??/title>
+  <link rel="stylesheet" href="/board.css">
+</head>
+<body>
+  <main class="board-shell">
+    <header class="board-header">
+      <h1>?꾪솴??<span id="group-label">?쒖쿇</span></h1>
+      <p id="board-updated">?곗씠??湲곗?: ?뺤씤 以?..</p>
+      <p class="board-note">?ㅼ떆媛?吏꾪뻾???ы븿 쨌 ?뺢린?먮즺??留ㅼ떆 ?뺢컖怨?30遺꾩뿉 媛깆떊?⑸땲??</p>
+      <button id="refresh-button" class="refresh-button" type="button">理쒖떊 ?뺢린?먮즺 ?뺤씤</button>
+    </header>
+
+    <section class="board-card" aria-labelledby="active-title">
+      <h2 id="active-title">?꾩옱 吏꾪뻾 ?쒖쐞 <span id="active-count">0紐?/span></h2>
+
+      <div id="loading-box" class="status-box">?꾪솴?먯쓣 遺덈윭?ㅻ뒗 以?..</div>
+      <div id="error-box" class="status-box error" hidden></div>
+      <div id="empty-box" class="status-box" hidden>?꾩옱 吏꾪뻾 以묒씤 怨듬났 ?곗씠?곌? ?놁뒿?덈떎.</div>
+
+      <div id="active-section" hidden>
+        <div class="desktop-table-wrap">
+          <table class="board-table">
+            <thead>
+              <tr>
+                <th>?쒖쐞</th>
+                <th>?대쫫</th>
+                <th>紐⑺몴</th>
+                <th>%</th>
+                <th>100</th>
+                <th>95</th>
+                <th>90</th>
+                <th>80</th>
+              </tr>
+            </thead>
+            <tbody id="active-body"></tbody>
+          </table>
+        </div>
+        <div id="active-mobile-list" class="mobile-list"></div>
+      </div>
+    </section>
+
+    <section class="board-card" aria-labelledby="completed-title">
+      <h2 id="completed-title">怨듬났 紐⑺몴 ?ъ꽦</h2>
+      <p class="section-description">24?쒓컙 ??紐⑺몴 ?ъ꽦?먮? 蹂댁뿬以띾땲??</p>
+
+      <div class="desktop-table-wrap">
+        <table class="board-table completed-table">
+          <thead>
+            <tr>
+              <th>?대쫫</th>
+              <th>紐⑺몴</th>
+              <th>100</th>
+              <th>95</th>
+              <th>90</th>
+              <th>80</th>
+              <th>寃??/th>
+            </tr>
+          </thead>
+          <tbody id="completed-body"></tbody>
+        </table>
+      </div>
+
+      <div id="completed-mobile-list" class="mobile-list"></div>
+      <p id="completed-empty" class="status-box">24?쒓컙 ??紐⑺몴 ?ъ꽦?먭? ?놁뒿?덈떎.</p>
+    </section>
+
+    <button id="back-button" class="back-button" type="button">?뚯븘媛湲?/button>
+      <div id="deployment-version">BOARD DEPLOY VERSION: 20260819-0045</div>
+  </main>
+
+  <script src="/board.js" defer></script>
+</body>
+</html>

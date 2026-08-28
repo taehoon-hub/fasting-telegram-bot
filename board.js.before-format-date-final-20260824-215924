@@ -1,4 +1,4 @@
-﻿console.log("BOARD JS LIVE ROW FIX: 202608192352");
+console.log("BOARD JS LIVE ROW FIX: 202608192352");
 
 (() => {
   const tg = window.Telegram?.WebApp;
@@ -49,7 +49,6 @@
         row?.progressPercent ?? (completed ? 100 : 0)
       ),
       scores: row?.scoreCounts || {},
-      previousAchievementCount: Number(row?.previousAchievementCount ?? 0),
       completionStatus: row?.completionSection?.reviewStatus || row?.selfReviewStatus || null,
       completionScore: row?.completionSection?.finalScore ?? row?.selfReviewScore ?? null,
       selfReviewStatus: row?.selfReviewStatus || null,
@@ -64,8 +63,7 @@
       <tr>
         <td>${item.rank}</td>
         <td>${escapeHtml(item.name)}</td>
-        <td>🏆 ${item.previousAchievementCount > 0 ? item.previousAchievementCount : '--'}</td>
-        <td>${item.targetHours}시간</td>
+        <td>${item.targetHours}</td>
         <td>${item.progressPercent}%</td>
         <td>${score(item.scores, 100)}</td>
         <td>${score(item.scores, 95)}</td>
@@ -83,8 +81,7 @@
     return `
       <tr>
         <td>${escapeHtml(item.name)}</td>
-        <td>🏆 ${item.previousAchievementCount > 0 ? item.previousAchievementCount : '--'}</td>
-        <td>${item.targetHours}시간</td>
+        <td>${item.targetHours}</td>
         <td>${selectedScore === 100 ? "❤️" : ""}</td>
         <td>${selectedScore === 95 ? "❤️" : ""}</td>
         <td>${selectedScore === 90 ? "❤️" : ""}</td>
@@ -109,7 +106,7 @@
         <div class="mobile-card-meta">
           \uAC80\uC218:
           ${
-            item.completionStatus === "reviewCompleted"
+            item.selfReviewStatus === "completed"
               ? "\uC644\uB8CC" +
                 (item.selfReviewScore
                   ? ` \u00B7 ${item.selfReviewScore}\uC810`
@@ -128,7 +125,7 @@
         </div>
 
         <div class="mobile-card-meta">
-          \uD2B8\uB85C\uD53C ${item.previousAchievementCount > 0 ? item.previousAchievementCount : '--'}\uD68C \u00B7 \uBAA9\uD45C ${item.targetHours}\uC2DC\uAC04
+          \uBAA9\uD45C ${item.targetHours}\uC2DC\uAC04
         </div>
 
         ${review}
@@ -144,31 +141,23 @@
   }
 
   function formatDate(value) {
-    if (!value) return "업데이트 준비 중";
-
-    let date;
-
-    if (typeof value?.toDate === "function") {
-      date = value.toDate();
-    } else if (typeof value?.seconds === "number") {
-      date = new Date(
-        Number(value.seconds) * 1000 +
-        Math.floor(Number(value.nanoseconds || 0) / 1000000)
-      );
-    } else {
-      date = new Date(value);
+    if (!value) {
+      return "\uD655\uC778\uB418\uC9C0 \uC54A\uC74C";
     }
 
-    if (Number.isNaN(date.getTime())) return "업데이트 준비 중";
+    const date = new Date(value);
 
-    return new Intl.DateTimeFormat("ko-KR", {
+    if (Number.isNaN(date.getTime())) {
+      return "\uD655\uC778\uB418\uC9C0 \uC54A\uC74C";
+    }
+
+    return date.toLocaleString("ko-KR", {
       timeZone: "Asia/Seoul",
-      year: "numeric",
       month: "numeric",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit"
-    }).format(date);
+    });
   }
 
   function render(data) {
@@ -188,11 +177,6 @@
 
     if (el.activeCount) {
       el.activeCount.textContent = `${rows.length}\uBA85`;
-
-    const completedCount = document.getElementById("completed-count");
-    if (completedCount) {
-      completedCount.textContent = `${completed.length}\uBA85`;
-    }
     }
 
     if (el.activeBody) {

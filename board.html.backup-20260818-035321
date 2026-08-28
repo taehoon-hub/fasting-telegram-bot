@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fasting Board</title>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #ffffff;
+      color: #111111;
+      font-family: Arial, sans-serif;
+    }
+
+    .app-shell {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .eyebrow {
+      color: #777777;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+
+    h1 {
+      margin: 4px 0;
+      font-size: 24px;
+    }
+
+    .updated {
+      color: #666666;
+      font-size: 14px;
+    }
+
+    .icon-button {
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 8px;
+      background: #2481cc;
+      color: #ffffff;
+      font-size: 14px;
+    }
+
+    .message {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 8px;
+      background: #f1f3f5;
+    }
+
+    .error {
+      background: #ffe3e3;
+      color: #c92a2a;
+    }
+
+    .board-section {
+      margin-top: 24px;
+    }
+
+    .section-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    .board-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    .board-table th,
+    .board-table td {
+      padding: 10px 6px;
+      border-bottom: 1px solid #dddddd;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+  </style>
+
+<style id="responsive-board-style">
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 0;
+}
+
+main,
+.container,
+.wrapper,
+.board-container,
+.board-section,
+section,
+div {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.board-table {
+  display: table;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed !important;
+  border-collapse: collapse;
+}
+
+.board-table th,
+.board-table td {
+  min-width: 0 !important;
+  max-width: 100%;
+  padding: 6px 2px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  word-break: break-all;
+}
+
+.board-table th:nth-child(1),
+.board-table td:nth-child(1) {
+  width: 8% !important;
+}
+
+.board-table th:nth-child(2),
+.board-table td:nth-child(2) {
+  width: 22% !important;
+  text-align: left;
+}
+
+.board-table th:nth-child(3),
+.board-table td:nth-child(3) {
+  width: 16% !important;
+}
+
+.board-table th:nth-child(4),
+.board-table td:nth-child(4) {
+  width: 20% !important;
+}
+
+.board-table th:nth-child(n+5),
+.board-table td:nth-child(n+5) {
+  width: 8.5% !important;
+}
+
+@media (max-width: 600px) {
+  html,
+  body {
+    overflow-x: hidden !important;
+  }
+
+  body {
+    font-size: 13px;
+  }
+
+  .board-table {
+    font-size: 10px !important;
+  }
+
+  .board-table th,
+  .board-table td {
+    padding: 6px 1px !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-all;
+  }
+
+  .board-table th:nth-child(1),
+  .board-table td:nth-child(1) {
+    width: 8% !important;
+  }
+
+  .board-table th:nth-child(2),
+  .board-table td:nth-child(2) {
+    width: 22% !important;
+  }
+
+  .board-table th:nth-child(3),
+  .board-table td:nth-child(3) {
+    width: 16% !important;
+  }
+
+  .board-table th:nth-child(4),
+  .board-table td:nth-child(4) {
+    width: 20% !important;
+  }
+
+  .board-table th:nth-child(n+5),
+  .board-table td:nth-child(n+5) {
+    width: 8.5% !important;
+  }
+
+  h1,
+  h2,
+  h3 {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  button,
+  input,
+  select {
+    max-width: 100%;
+  }
+}
+</style>
+</head>
+
+<body>
+  <main class="app-shell">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">FASTING MASTER</p>
+        <h1 id="board-title">Fasting Board</h1>
+        <p id="board-updated" class="updated">Loading...</p>
+      </div>
+
+      <button id="refresh-button" class="icon-button" type="button">
+        Refresh
+      </button>
+    </header>
+
+    <div id="error-box" class="message error" hidden></div>
+    <div id="loading-box" class="message">Loading board...</div>
+
+    <section id="active-section" class="board-section" hidden>
+      <div class="section-heading">
+        <h2>Active Sessions</h2>
+        <span id="active-count"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="board-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Target</th>
+              <th>Progress</th>
+              <th>100</th>
+              <th>95</th>
+              <th>90</th>
+              <th>80</th>
+            </tr>
+          </thead>
+          <tbody id="active-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="completed-section" class="board-section" hidden>
+      <div class="section-heading">
+        <h2>Completed Sessions</h2>
+        <span id="completed-count"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="board-table">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Target</th>
+              <th>Progress</th>
+              <th>100</th>
+              <th>95</th>
+              <th>90</th>
+              <th>80</th>
+            </tr>
+          </thead>
+          <tbody id="completed-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div id="empty-box" class="message" hidden>
+      No active fasting sessions.
+    </div>
+  </main>
+
+  <script src="/board.js?v=20260817-5"></script>
+</body>
+</html>
