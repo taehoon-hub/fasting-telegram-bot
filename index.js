@@ -148,7 +148,6 @@ async function checkDueReminders() {
         await bot.sendMessage(
           session.telegramChatId,
           "\uACF5\uBCF5 \uC2DC\uC791 \uD6C4 \uCCAB \uCCB4\uD06C\uC778 \uC2DC\uAC04\uC785\uB2C8\uB2E4.\n\n" +
-          "\uACF5\uBCF5 \uC2DC\uC791 \uD6C4 \uCCAB \uCCB4\uD06C\uC778 \uC2DC\uAC04\uC785\uB2C8\uB2E4.\n\n" +
           "\uC810\uC218 \uC120\uD0DD \uD31D\uC744 \uBCF4\uC168\uB3C4 \uB418\uACE0\n" +
           "\uC5EC\uB7EC\uBD84\uB9CC\uC758 \uBC29\uC2DD\uB300\uB85C \uD558\uC168\uB3C4 \uB429\uB2C8\uB2E4 :)",
           {
