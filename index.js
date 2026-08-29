@@ -230,7 +230,7 @@ function progressMessage(session) {
     const reminderTime = reminderDate.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: 'numeric', minute: '2-digit', hourCycle: 'h23' }).replace(':', '시 ') + '분';
     next = `${reminderTime} (${remainingMinutes}분 후)`;
   }
-  return `공복 진행 중입니다.\n\n이름: ${session.name}\n그룹: ${session.groupTag}\n목표: ${session.targetHours} 시간\n\n경과 시간: ${Math.floor(elapsed / 60)}시간 ${elapsed % 60}분\n\n남은 시간: ${Math.floor(remaining / 60)}시간 ${remaining % 60}분\n\n다음 알림: ${next}`;
+  return `안녕하세요! ${session.groupName} 세션에 참여하신 것을 환영합니다!\n\n아래 버튼을 눌러 진행상황을 확인하거나, 점수를 입력해주세요.`;
 }
 
 async function getPreviousAchievementCount(userId, beforeDate = new Date()) {
@@ -285,7 +285,9 @@ function scoreKeyboard(sessionId) {
     [
       button('90', `score:90:${sessionId}`),
       button('80', `score:80:${sessionId}`)
-    ]
+    ],
+    [
+      button('점수 선택 TIP', 'tip_score')
   ]);
 
   console.log('SCORE KEYBOARD GENERATED', JSON.stringify(result));
@@ -835,15 +837,6 @@ bot.on('callback_query', async (query) => {
     }
 
     if (data.startsWith('score:')) {
-      const [, scoreText] = data.split(':');
-      const score = Number(scoreText);
-      const session = await findSession(chatId, query.from.id);
-      console.log('SCORE SESSION LOOKUP', { data, chatId, userId: query.from?.id, sessionId: session?.id || null, found: Boolean(session) });
-
-      if (!session || ![100, 95, 90, 80].includes(score)) {
-        await refreshBoardSnapshots();
-        return;
-      }
 
       const ref = db.collection('liveSessions').doc(session.id);
 
@@ -962,7 +955,22 @@ bot.on('callback_query', async (query) => {
         [button('30분', `alert:30:${session.id}`), button('1시간', `alert:60:${session.id}`)],
         [button('2시간', `alert:120:${session.id}`)],
         [button('알림 끄기', `alert:off:${session.id}`)]
-      ]), { chat_id: chatId, message_id: messageId });
+    } else if (data === 'tip_score') {
+      await bot.answerCallbackQuery(query.id, {
+        text: '?? **점수 선택 TIP**\n\n' +
+          '**100 점**: 물만 마셨어요\n' +
+          '**95 점**: 물 + 블랙커피/차\n' +
+          '**90 점**: 물 + 칼로리 50kcal 미만\n' +
+          '**80 점**: 물 + 칼로리 100kcal 미만\n\n' +
+          '본인의 상태에 가장 가까운 점수를 선택해 주세요!\n\n' +
+          '이 외에도 마음의 상태에 따라\n\n' +
+          '**100 점**: 전혀 괴롭지 않았음\n' +
+          '**95 점**: 살짝 아쉽지만 잘 지켰음\n' +
+          '**90 점**: 좀 힘들었지만 버텨냈음\n' +
+          '**80 점**: 유혹을 참느라 스트레스였음\n\n' +
+          '정답이 없으니,\n' +
+          '본인만의 기준으로 만들어가요!!'
+      });
       return;
     }
 
