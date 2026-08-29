@@ -17,7 +17,8 @@ const scoreKeyboard = {
         { text: '90??, callback_data: 'fast_score_90' },
         { text: '80??, callback_data: 'fast_score_80' }
       ],
-      [{ text: '?뚮┝ ?꾧린', callback_data: 'fast_alert_off' }]
+      [{ text: '?뚮┝ ?꾧린', callback_data: 'fast_alert_off' }],
+      [{ text: '점수 선택 TIP', callback_data: 'fast_score_tip' }]
     ]
   }
 };
@@ -113,7 +114,7 @@ async function sendRepeatCheckin(bot, document, session) {
   try {
     await bot.sendMessage(
       session.chatId,
-      '공복 시작 후 첫 체크인 시간입니다.\n\n점수 선택 팝을 보셔도 되고\n여러분만의 방식대로 하셔도 됩니다 :)',
+      '공복 시작 후 첫 체크인 시간입니다.\n\n점수 선택 팁을 참고하시거나\n여러분의 직관으로 하셔도 됩니다 :)',
       scoreKeyboard
     );
 
@@ -219,3 +220,5 @@ module.exports = {
   toDate,
   generateAllGroupSnapshots
 };
+
+
