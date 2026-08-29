@@ -288,24 +288,12 @@ function scoreKeyboard(sessionId) {
     ],
     [
       button('점수 선택 TIP', 'tip_score')
+    ]
   ]);
 
   console.log('SCORE KEYBOARD GENERATED', JSON.stringify(result));
 
   return result;
-}
-
-function sessionKeyboard(chatId, session) {
-  return keyboard([
-    [
-      button('\uC9C4\uD589\uC0C1\uD669', `progress:${session.id}`),
-      webAppButton(chatId, session.groupTag)
-    ],
-    [
-      button('\uACF5\uBCF5\uC911\uC9C0', `stop_confirm:${session.id}`),
-      button('\uC54C\uB9BC \uC124\uC815', `alerts:${session.id}`)
-    ]
-  ]);
 }
 async function updateMessage(chatId, messageId, session) {
   try {
