@@ -1,4 +1,4 @@
-ï»¿require('dotenv').config();
+require('dotenv').config();
 
 const path = require('path');
 const express = require('express');
@@ -94,7 +94,7 @@ async function checkDueReminders() {
         updatedAt: FieldValue.serverTimestamp()
       });
 
-      await db.collection('completedSessions').doc(session.id).set({
+      await db.collection('completedSessions').doc(session.telegramUserId).set({
         id: session.id,
         telegramUserId: session.telegramUserId,
         telegramChatId: session.telegramChatId,
@@ -115,9 +115,9 @@ async function checkDueReminders() {
 
       await bot.sendMessage(
         session.telegramChatId,
-        'ê³µë³µ ëª©í‘œì— ë„ë‹¬í–ˆìŠµë‹ˆë‹¤.\n\n' +
+        '°øº¹ ¸ñÇ¥¿¡ µµ´ŞÇß½À´Ï´Ù.\n\n' +
         'The session was automatically completed.\n' +
-        'ê³µë³µ ê¸°ë¡ì„ í™•ì¸í•˜ê³  ìµœì¢… ì ìˆ˜ë¥¼ ì„ íƒí•´ ì£¼ì„¸ìš”.',
+        '°øº¹ ±â·ÏÀ» È®ÀÎÇÏ°í ÃÖÁ¾ Á¡¼ö¸¦ ¼±ÅÃÇØ ÁÖ¼¼¿ä.',
         {
           reply_markup: scoreKeyboard(session.id)
         }
@@ -177,7 +177,7 @@ async function checkDueReminders() {
       } else {
         await bot.sendMessage(
           session.telegramChatId,
-          'ë°©ê¸ˆê¹Œì§€ì˜ ê³µë³µ ì—¬ì •ì„ ëŒì´ì¼œë³´ê³ ,\nì ìˆ˜ë¥¼ ì„ íƒí•´ ì£¼ì„¸ìš”.',
+          '¹æ±İ±îÁöÀÇ °øº¹ ¿©Á¤À» µ¹ÀÌÄÑº¸°í,\nÁ¡¼ö¸¦ ¼±ÅÃÇØ ÁÖ¼¼¿ä.',
           { reply_markup: scoreKeyboard(session.id) }
         );
 
@@ -223,14 +223,14 @@ function percent(session) {
 function progressMessage(session) {
   const elapsed =minutesBetween(session.startedAt, new Date());
   const remaining = Math.max(0,minutesBetween(new Date(), session.targetAt));
-  let next = 'ì•Œë¦¼ êº¼ì§';
+  let next = '¾Ë¸² ²¨Áü';
   if (session.alertsEnabled !== false && session.nextReminderAt) {
     const reminderDate = session.nextReminderAt?.toDate ? session.nextReminderAt.toDate() : new Date(session.nextReminderAt);
     const remainingMinutes = Math.max(0, Math.ceil((reminderDate.getTime() - Date.now()) / 60000));
-    const reminderTime = reminderDate.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: 'numeric', minute: '2-digit', hourCycle: 'h23' }).replace(':', 'ì‹œ ') + 'ë¶„';
-    next = `${reminderTime} (${remainingMinutes}ë¶„ í›„)`;
+    const reminderTime = reminderDate.toLocaleTimeString('ko-KR', { timeZone: 'Asia/Seoul', hour: 'numeric', minute: '2-digit', hourCycle: 'h23' }).replace(':', '½Ã ') + 'ºĞ';
+    next = `${reminderTime} (${remainingMinutes}ºĞ ÈÄ)`;
   }
-  return `ê³µë³µ ì§„í–‰ ì¤‘ì…ë‹ˆë‹¤.\n\nì´ë¦„: ${session.name}\nê·¸ë£¹: ${session.groupTag}\nëª©í‘œ: ${session.targetHours} ì‹œê°„\n\nê²½ê³¼ ì‹œê°„: ${Math.floor(elapsed / 60)}ì‹œê°„ ${elapsed % 60}ë¶„\n\në‚¨ì€ ì‹œê°„: ${Math.floor(remaining / 60)}ì‹œê°„ ${remaining % 60}ë¶„\n\në‹¤ìŒ ì•Œë¦¼: ${next}`;
+  return `°øº¹ ÁøÇà ÁßÀÔ´Ï´Ù.\n\nÀÌ¸§: ${session.name}\n±×·ì: ${session.groupTag}\n¸ñÇ¥: ${session.targetHours} ½Ã°£\n\n°æ°ú ½Ã°£: ${Math.floor(elapsed / 60)}½Ã°£ ${elapsed % 60}ºĞ\n\n³²Àº ½Ã°£: ${Math.floor(remaining / 60)}½Ã°£ ${remaining % 60}ºĞ\n\n´ÙÀ½ ¾Ë¸²: ${next}`;
 }
 
 async function getPreviousAchievementCount(userId, beforeDate = new Date()) {
@@ -337,10 +337,10 @@ bot.onText(/^\/start$/, async (msg) => {
     await saveTelegramUser(msg);
     const existing = await findSession(msg.chat.id, msg.from.id);
     if (existing) {
-      await bot.sendMessage(msg.chat.id, `ì§„í–‰ ì¤‘ì¸ ê³µë³µ ì„¸ì…˜ì´ ìˆìŠµë‹ˆë‹¤.\n\nëª©í‘œ: ${existing.targetHours}ì‹œê°„\n\nê³„ì† ì§„í–‰í• ê¹Œìš”?`, {
+      await bot.sendMessage(msg.chat.id, `ÁøÇà ÁßÀÎ °øº¹ ¼¼¼ÇÀÌ ÀÖ½À´Ï´Ù.\n\n¸ñÇ¥: ${existing.targetHours}½Ã°£\n\n°è¼Ó ÁøÇàÇÒ±î¿ä?`, {
         reply_markup: keyboard([
-          [button('ê³„ì† ì§„í–‰', `resume:${existing.id}`)],
-          [button('ì¤‘ì§€í•˜ê³  ë‹¤ì‹œ ì‹œì‘', `restart:${existing.id}`)]
+          [button('°è¼Ó ÁøÇà', `resume:${existing.id}`)],
+          [button('ÁßÁöÇÏ°í ´Ù½Ã ½ÃÀÛ', `restart:${existing.id}`)]
         ])
       });
       return;
@@ -350,7 +350,7 @@ bot.onText(/^\/start$/, async (msg) => {
     await bot.sendMessage(msg.chat.id, '\uC548\uB155\uD558\uC138\uC694.\n\n\uC5EC\uB7EC\uBD84\uC758 \uACF5\uBCF5 \uC5EC\uC815\uC744 \uD568\uAED8 \uD558\uACA0\uC2B5\uB2C8\uB2E4', {
       reply_markup: keyboard([
         [button('\uACF5\uBCF5 \uC2DC\uC791', 'start_fasting')],
-        [button('ë„ì›€ë§', 'help')]
+        [button('µµ¿ò¸»', 'help')]
       ])
     });
   } catch (error) {
@@ -365,7 +365,7 @@ bot.on('message', async (msg) => {
 
   const parts = msg.text.trim().split('_');
   if (parts.length < 2 || !parts.at(-1) || !parts.slice(0, -1).join('_')) {
-    await bot.sendMessage(msg.chat.id, 'ì´ë¦„_ê·¸ë£¹ í˜•ì‹ìœ¼ë¡œ ì…ë ¥í•´ ì£¼ì„¸ìš”. ì˜ˆ: ë©”ì‹œ_ê²½ê¸°');
+    await bot.sendMessage(msg.chat.id, 'ÀÌ¸§_±×·ì Çü½ÄÀ¸·Î ÀÔ·ÂÇØ ÁÖ¼¼¿ä. ¿¹: ¸Ş½Ã_°æ±â');
     return;
   }
 
@@ -374,11 +374,11 @@ bot.on('message', async (msg) => {
   state.step = 'target';
   draft.set(String(msg.chat.id), state);
 
-  await bot.sendMessage(msg.chat.id, `ì´ë¦„: ${state.name}\nê·¸ë£¹: ${state.groupTag}\n\nê³µë³µ ì‹œê°„ì„ ì„ íƒí•´ ì£¼ì„¸ìš”.`, {
+  await bot.sendMessage(msg.chat.id, `ÀÌ¸§: ${state.name}\n±×·ì: ${state.groupTag}\n\n°øº¹ ½Ã°£À» ¼±ÅÃÇØ ÁÖ¼¼¿ä.`, {
     reply_markup: keyboard([
-      [button('12ì‹œê°„', 'target:12'), button('14ì‹œê°„', 'target:14')],
-      [button('16ì‹œê°„', 'target:16'), button('18ì‹œê°„', 'target:18')],
-      [button('20ì‹œê°„', 'target:20')]
+      [button('12½Ã°£', 'target:12'), button('14½Ã°£', 'target:14')],
+      [button('16½Ã°£', 'target:16'), button('18½Ã°£', 'target:18')],
+      [button('20½Ã°£', 'target:20')]
     ])
   });
 });
@@ -410,7 +410,7 @@ bot.on('callback_query', async (query) => {
       if (!name || !groupTag) {
         await bot.sendMessage(
           chatId,
-          'ì´ë¦„ê³¼ ê·¸ë£¹ ì •ë³´ê°€ ì—†ìŠµë‹ˆë‹¤. /startë¥¼ ë‹¤ì‹œ ì‹¤í–‰í•´ ì£¼ì„¸ìš”.'
+          'ÀÌ¸§°ú ±×·ì Á¤º¸°¡ ¾ø½À´Ï´Ù. /start¸¦ ´Ù½Ã ½ÇÇàÇØ ÁÖ¼¼¿ä.'
         );
         return;
       }
@@ -418,7 +418,7 @@ bot.on('callback_query', async (query) => {
       if (name.length > 40 || groupTag.length > 30) {
         await bot.sendMessage(
           chatId,
-          'ì´ë¦„ ë˜ëŠ” ê·¸ë£¹ëª…ì´ ë„ˆë¬´ ê¹ë‹ˆë‹¤.'
+          'ÀÌ¸§ ¶Ç´Â ±×·ì¸íÀÌ ³Ê¹« ±é´Ï´Ù.'
         );
         return;
       }
@@ -492,7 +492,7 @@ bot.on('callback_query', async (query) => {
         draft.delete(String(chatId));
 
         await bot.editMessageText(
-          `ê³µë³µì´ ì‹œì‘ë˜ì—ˆìŠµë‹ˆë‹¤.\n\nì´ë¦„: ${name}\nê·¸ë£¹: ${groupTag}\nëª©í‘œ: ${targetHours}ì‹œê°„`,
+          `°øº¹ÀÌ ½ÃÀÛµÇ¾ú½À´Ï´Ù.\n\nÀÌ¸§: ${name}\n±×·ì: ${groupTag}\n¸ñÇ¥: ${targetHours}½Ã°£`,
           {
             chat_id: chatId,
             message_id: messageId,
@@ -506,18 +506,18 @@ bot.on('callback_query', async (query) => {
         if (error.message === 'DUPLICATE_NAME') {
           await bot.sendMessage(
             chatId,
-            `ê·¸ë£¹ '${groupTag}'ì— ê°™ì€ ì´ë¦„ì´ ì´ë¯¸ ë“±ë¡ë˜ì–´ ìˆìŠµë‹ˆë‹¤. ë‹¤ë¥¸ ì´ë¦„ì„ ì…ë ¥í•´ ì£¼ì„¸ìš”.`
+            `±×·ì '${groupTag}'¿¡ °°Àº ÀÌ¸§ÀÌ ÀÌ¹Ì µî·ÏµÇ¾î ÀÖ½À´Ï´Ù. ´Ù¸¥ ÀÌ¸§À» ÀÔ·ÂÇØ ÁÖ¼¼¿ä.`
           );
         } else if (error.message === 'GROUP_FULL') {
           await bot.sendMessage(
             chatId,
-            `ê·¸ë£¹ '${groupTag}'ì€ í˜„ì¬ 30ëª…ìœ¼ë¡œ ê°€ë“ ì°¼ìŠµë‹ˆë‹¤. ë‹¤ë¥¸ ê·¸ë£¹ì„ ì…ë ¥í•´ ì£¼ì„¸ìš”.`
+            `±×·ì '${groupTag}'Àº ÇöÀç 30¸íÀ¸·Î °¡µæ Ã¡½À´Ï´Ù. ´Ù¸¥ ±×·ìÀ» ÀÔ·ÂÇØ ÁÖ¼¼¿ä.`
           );
         } else {
           console.error('session registration error:', error);
           await bot.sendMessage(
             chatId,
-            'ê³µë³µì„ ì‹œì‘í•˜ëŠ” ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤. ì ì‹œ í›„ ë‹¤ì‹œ ì‹œë„í•´ ì£¼ì„¸ìš”.'
+            '°øº¹À» ½ÃÀÛÇÏ´Â Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù. Àá½Ã ÈÄ ´Ù½Ã ½ÃµµÇØ ÁÖ¼¼¿ä.'
           );
         }
       }
@@ -530,7 +530,7 @@ bot.on('callback_query', async (query) => {
       const session = await findSession(chatId, query.from.id);
 
       if (!session || session.id !== sessionId) {
-        await bot.sendMessage(chatId, 'ì´ì–´ê°ˆ ê³µë³µ ì„¸ì…˜ì„ ì°¾ì„ ìˆ˜ ì—†ìŠµë‹ˆë‹¤.');
+        await bot.sendMessage(chatId, 'ÀÌ¾î°¥ °øº¹ ¼¼¼ÇÀ» Ã£À» ¼ö ¾ø½À´Ï´Ù.');
         return;
       }
 
@@ -551,7 +551,7 @@ bot.on('callback_query', async (query) => {
 
       await bot.sendMessage(
         chatId,
-        'ì´ë¦„ê³¼ ê·¸ë£¹ì„ ì…ë ¥í•´ ì£¼ì„¸ìš”.\nì˜ˆ: ë©”ì‹œ_ê²½ê¸°'
+        'ÀÌ¸§°ú ±×·ìÀ» ÀÔ·ÂÇØ ÁÖ¼¼¿ä.\n¿¹: ¸Ş½Ã_°æ±â'
       );
 
       return;
@@ -560,7 +560,7 @@ bot.on('callback_query', async (query) => {
     if (data === 'help') {
       await bot.sendMessage(
         chatId,
-                'ğŸ“– ì•ˆë…•í•˜ì„¸ìš”? ë°˜ê°‘ìŠµë‹ˆë‹¤.\n\n1ï¸âƒ£ [ê³µë³µ ì‹œì‘] ë²„íŠ¼ì„ ëˆŒëŸ¬ìš”\n2ï¸âƒ£ "ì´ë¦„_ê·¸ë£¹" í˜•ì‹ìœ¼ë¡œ ì…ë ¥í•´ìš”\n   (ì˜ˆ: ë¶€ì_ì„œìš¸, ë¯¸ë‹ˆ_ë¶€ì‚°)\n3ï¸âƒ£ ëª©í‘œ ê³µë³µ ì‹œê°„ì„ ì„ íƒí•´ìš” (12/14/16/18/20 ì‹œê°„)\n\nğŸ’¡ íŒ\n-  ì¤‘ê°„ì¤‘ê°„ ì•Œë¦¼ì´ ì˜¤ë©´ ì ìˆ˜ë¥¼ ì„ íƒí•´ ì£¼ì„¸ìš”\n-  ì ìˆ˜ëŠ” ë³´ì—¬ì£¼ê¸° ìœ„í•œ ê²ƒì´ ì•„ë‹ˆë¼, ë³¸ì¸ì˜ ê³µë³µ ì—¬ì •ì„ ëŒì´ì¼œë³´ê¸° ìœ„í•¨ì´ì—ìš”.\n-  í˜„í™©íŒì—ì„œ ë‹¤ë¥¸ ì‚¬ëŒì˜ ê³µë³µ ì—¬ì •ë„ í™•ì¸í•  ìˆ˜ ìˆì–´ìš”.\n\nì¦ê±°ìš´ ê³µë³µ ì±Œë¦°ì§€ ë˜ì„¸ìš”! ğŸ‰'
+                '?? ¾È³çÇÏ¼¼¿ä? ¹İ°©½À´Ï´Ù.\n\n1?? [°øº¹ ½ÃÀÛ] ¹öÆ°À» ´­·¯¿ä\n2?? "ÀÌ¸§_±×·ì" Çü½ÄÀ¸·Î ÀÔ·ÂÇØ¿ä\n   (¿¹: ºÎÀÚ_¼­¿ï, ¹Ì´Ï_ºÎ»ê)\n3?? ¸ñÇ¥ °øº¹ ½Ã°£À» ¼±ÅÃÇØ¿ä (12/14/16/18/20 ½Ã°£)\n\n?? ÆÁ\n-  Áß°£Áß°£ ¾Ë¸²ÀÌ ¿À¸é Á¡¼ö¸¦ ¼±ÅÃÇØ ÁÖ¼¼¿ä\n-  Á¡¼ö´Â º¸¿©ÁÖ±â À§ÇÑ °ÍÀÌ ¾Æ´Ï¶ó, º»ÀÎÀÇ °øº¹ ¿©Á¤À» µ¹ÀÌÄÑº¸±â À§ÇÔÀÌ¿¡¿ä.\n-  ÇöÈ²ÆÇ¿¡¼­ ´Ù¸¥ »ç¶÷ÀÇ °øº¹ ¿©Á¤µµ È®ÀÎÇÒ ¼ö ÀÖ¾î¿ä.\n\nÁñ°Å¿î °øº¹ Ã§¸°Áö µÇ¼¼¿ä! ??'
       );
 
       return;
@@ -569,7 +569,7 @@ bot.on('callback_query', async (query) => {
     if (data === 'fast_score_tip') {
       await bot.sendMessage(
         chatId,
-        'ğŸ’¡ ì ìˆ˜ ì„ íƒ TIP\n\n100 ì : ë¬¼ë§Œ ë§ˆì…¨ì–´ìš”\n95 ì : ë¬¼ + ë¸”ë™ì»¤í”¼/ì°¨\n90 ì : ë¬¼ + ì¹¼ë¡œë¦¬ 50kcal ë¯¸ë§Œ\n80 ì : ë¬¼ + ì¹¼ë¡œë¦¬ 100kcal ë¯¸ë§Œ\n\në³¸ì¸ì˜ ìƒíƒœì— ê°€ì¥ ê°€ê¹Œìš´ ì ìˆ˜ë¥¼ ì„ íƒí•´ ì£¼ì„¸ìš”!\n\nì´ ì™¸ì—ë„ ë§ˆìŒì˜ ìƒíƒœì— ë”°ë¼\n\n100 ì : ì „í˜€ ê´´ë¡­ì§€ ì•Šì•˜ìŒ\n95 ì : ê°€ë” ìƒê°ë‚¬ì§€ë§Œ ë°”ë¡œ ìŠìŒ\n90 ì : ë°°ê³ í””ì„ ì¡°ê¸ˆ ëŠë‚Œ\n80 ì : ìœ í˜¹ì„ ì°¸ëŠë¼ ìŠ¤íŠ¸ë ˆìŠ¤ì˜€ìŒ\n\nì •ë‹µì´ ì—†ìœ¼ë‹ˆ, ë³¸ì¸ë§Œì˜ ê¸°ì¤€ìœ¼ë¡œ ë§Œë“¤ì–´ê°€ìš”!!'
+        '?? Á¡¼ö ¼±ÅÃ TIP\n\n100 Á¡: ¹°¸¸ ¸¶¼Ì¾î¿ä\n95 Á¡: ¹° + ºí·¢Ä¿ÇÇ/Â÷\n90 Á¡: ¹° + Ä®·Î¸® 50kcal ¹Ì¸¸\n80 Á¡: ¹° + Ä®·Î¸® 100kcal ¹Ì¸¸\n\nº»ÀÎÀÇ »óÅÂ¿¡ °¡Àå °¡±î¿î Á¡¼ö¸¦ ¼±ÅÃÇØ ÁÖ¼¼¿ä!\n\nÀÌ ¿Ü¿¡µµ ¸¶À½ÀÇ »óÅÂ¿¡ µû¶ó\n\n100 Á¡: ÀüÇô ±«·ÓÁö ¾Ê¾ÒÀ½\n95 Á¡: °¡²û »ı°¢³µÁö¸¸ ¹Ù·Î ÀØÀ½\n90 Á¡: ¹è°íÇÄÀ» Á¶±İ ´À³¦\n80 Á¡: À¯È¤À» Âü´À¶ó ½ºÆ®·¹½º¿´À½\n\nÁ¤´äÀÌ ¾øÀ¸´Ï, º»ÀÎ¸¸ÀÇ ±âÁØÀ¸·Î ¸¸µé¾î°¡¿ä!!'
       );
       return;
     }
@@ -587,7 +587,7 @@ bot.on('callback_query', async (query) => {
       if (!name || !groupTag) {
         await bot.sendMessage(
           chatId,
-          'ì´ë¦„ê³¼ ê·¸ë£¹ ì •ë³´ê°€ ì—†ìŠµë‹ˆë‹¤. /startë¥¼ ë‹¤ì‹œ ì‹¤í–‰í•´ ì£¼ì„¸ìš”.'
+          'ÀÌ¸§°ú ±×·ì Á¤º¸°¡ ¾ø½À´Ï´Ù. /start¸¦ ´Ù½Ã ½ÇÇàÇØ ÁÖ¼¼¿ä.'
         );
         return;
       }
@@ -661,7 +661,7 @@ bot.on('callback_query', async (query) => {
         draft.delete(String(chatId));
 
         await bot.editMessageText(
-          `ê³µë³µì´ ì‹œì‘ë˜ì—ˆìŠµë‹ˆë‹¤.\n\nì´ë¦„: ${name}\nê·¸ë£¹: ${groupTag}\nëª©í‘œ: ${targetHours}ì‹œê°„`,
+          `°øº¹ÀÌ ½ÃÀÛµÇ¾ú½À´Ï´Ù.\n\nÀÌ¸§: ${name}\n±×·ì: ${groupTag}\n¸ñÇ¥: ${targetHours}½Ã°£`,
           {
             chat_id: chatId,
             message_id: messageId,
@@ -675,18 +675,18 @@ bot.on('callback_query', async (query) => {
         if (error.message === 'DUPLICATE_NAME') {
           await bot.sendMessage(
             chatId,
-            `ê·¸ë£¹ '${groupTag}'ì— ê°™ì€ ì´ë¦„ì´ ì´ë¯¸ ë“±ë¡ë˜ì–´ ìˆìŠµë‹ˆë‹¤. ë‹¤ë¥¸ ì´ë¦„ì„ ì…ë ¥í•´ ì£¼ì„¸ìš”.`
+            `±×·ì '${groupTag}'¿¡ °°Àº ÀÌ¸§ÀÌ ÀÌ¹Ì µî·ÏµÇ¾î ÀÖ½À´Ï´Ù. ´Ù¸¥ ÀÌ¸§À» ÀÔ·ÂÇØ ÁÖ¼¼¿ä.`
           );
         } else if (error.message === 'GROUP_FULL') {
           await bot.sendMessage(
             chatId,
-            `ê·¸ë£¹ '${groupTag}'ì€ í˜„ì¬ 30ëª…ìœ¼ë¡œ ê°€ë“ ì°¼ìŠµë‹ˆë‹¤. ë‹¤ë¥¸ ê·¸ë£¹ì„ ì…ë ¥í•´ ì£¼ì„¸ìš”.`
+            `±×·ì '${groupTag}'Àº ÇöÀç 30¸íÀ¸·Î °¡µæ Ã¡½À´Ï´Ù. ´Ù¸¥ ±×·ìÀ» ÀÔ·ÂÇØ ÁÖ¼¼¿ä.`
           );
         } else {
           console.error('session registration error:', error);
           await bot.sendMessage(
             chatId,
-            'ê³µë³µì„ ì‹œì‘í•˜ëŠ” ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤. ì ì‹œ í›„ ë‹¤ì‹œ ì‹œë„í•´ ì£¼ì„¸ìš”.'
+            '°øº¹À» ½ÃÀÛÇÏ´Â Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù. Àá½Ã ÈÄ ´Ù½Ã ½ÃµµÇØ ÁÖ¼¼¿ä.'
           );
         }
       }
@@ -707,7 +707,7 @@ bot.on('callback_query', async (query) => {
       if (!name || !groupTag) {
         await bot.sendMessage(
           chatId,
-          'ì´ë¦„ê³¼ ê·¸ë£¹ ì •ë³´ê°€ ì—†ìŠµë‹ˆë‹¤. /startë¥¼ ë‹¤ì‹œ ì‹¤í–‰í•´ ì£¼ì„¸ìš”.'
+          'ÀÌ¸§°ú ±×·ì Á¤º¸°¡ ¾ø½À´Ï´Ù. /start¸¦ ´Ù½Ã ½ÇÇàÇØ ÁÖ¼¼¿ä.'
         );
         return;
       }
@@ -779,7 +779,7 @@ bot.on('callback_query', async (query) => {
         draft.delete(String(chatId));
 
         await bot.editMessageText(
-          `ê³µë³µì´ ì‹œì‘ë˜ì—ˆìŠµë‹ˆë‹¤.\n\nì´ë¦„: ${name}\nê·¸ë£¹: ${groupTag}\nëª©í‘œ: ${targetHours}ì‹œê°„`,
+          `°øº¹ÀÌ ½ÃÀÛµÇ¾ú½À´Ï´Ù.\n\nÀÌ¸§: ${name}\n±×·ì: ${groupTag}\n¸ñÇ¥: ${targetHours}½Ã°£`,
           {
             chat_id: chatId,
             message_id: messageId,
@@ -795,18 +795,18 @@ bot.on('callback_query', async (query) => {
         if (error.message === 'DUPLICATE_NAME') {
           await bot.sendMessage(
             chatId,
-            `ê·¸ë£¹ '${groupTag}'ì— ê°™ì€ ì´ë¦„ì´ ì´ë¯¸ ë“±ë¡ë˜ì–´ ìˆìŠµë‹ˆë‹¤.`
+            `±×·ì '${groupTag}'¿¡ °°Àº ÀÌ¸§ÀÌ ÀÌ¹Ì µî·ÏµÇ¾î ÀÖ½À´Ï´Ù.`
           );
         } else if (error.message === 'GROUP_FULL') {
           await bot.sendMessage(
             chatId,
-            `ê·¸ë£¹ '${groupTag}'ì€ í˜„ì¬ 30ëª…ìœ¼ë¡œ ê°€ë“ ì°¼ìŠµë‹ˆë‹¤.`
+            `±×·ì '${groupTag}'Àº ÇöÀç 30¸íÀ¸·Î °¡µæ Ã¡½À´Ï´Ù.`
           );
         } else {
           console.error('session registration error:', error);
           await bot.sendMessage(
             chatId,
-            'ê³µë³µì„ ì‹œì‘í•˜ëŠ” ì¤‘ ì˜¤ë¥˜ê°€ ë°œìƒí–ˆìŠµë‹ˆë‹¤. ì ì‹œ í›„ ë‹¤ì‹œ ì‹œë„í•´ ì£¼ì„¸ìš”.'
+            '°øº¹À» ½ÃÀÛÇÏ´Â Áß ¿À·ù°¡ ¹ß»ıÇß½À´Ï´Ù. Àá½Ã ÈÄ ´Ù½Ã ½ÃµµÇØ ÁÖ¼¼¿ä.'
           );
         }
       }
@@ -824,7 +824,7 @@ bot.on('callback_query', async (query) => {
       if (!session) return;
 
       await bot.editMessageText(
-        'í˜„ì¬ ê³µë³µ ìƒíƒœì— ëŒ€í•œ ì ìˆ˜ë¥¼ ì„ íƒí•´ ì£¼ì„¸ìš”.',
+        'ÇöÀç °øº¹ »óÅÂ¿¡ ´ëÇÑ Á¡¼ö¸¦ ¼±ÅÃÇØ ÁÖ¼¼¿ä.',
         {
           chat_id: chatId,
           message_id: messageId,
@@ -873,14 +873,14 @@ bot.on('callback_query', async (query) => {
         }
 
         const boardButton = webAppButton(chatId, session.groupTag);
-        const progressButton = button('í˜„ì¬ ì§„í–‰ ìƒí™©', 'progress:' + session.id);
-        const restartButton = button('ê³µë³µ ë‹¤ì‹œ ì‹œì‘', 'restart:' + session.id);
+        const progressButton = button('ÇöÀç ÁøÇà »óÈ²', 'progress:' + session.id);
+        const restartButton = button('°øº¹ ´Ù½Ã ½ÃÀÛ', 'restart:' + session.id);
 
         await bot.editMessageText(
-          'ê³µë³µ ê¸°ë¡ì„ í•¨ê»˜ í•´ ì£¼ì…”ì„œ ê°ì‚¬í•©ë‹ˆë‹¤.\n' +
-          'ìµœì¢… ì ìˆ˜ ' + score + ' ì €ì¥ ì™„ë£Œë˜ì—ˆìŠµë‹ˆë‹¤.\n\n' +
-          'ì´ë¡œì¨ ê³µë³µ ì¼ì •ì„ ë§ˆë¬´ë¦¬í•©ë‹ˆë‹¤.\n\n' +
-          'ì´ì œëŠ” ì„­ì·¨ì˜ ê¸°ì¨ì„ ëˆ„ë¦¬ì„¸ìš”.',
+          '°øº¹ ±â·ÏÀ» ÇÔ²² ÇØ ÁÖ¼Å¼­ °¨»çÇÕ´Ï´Ù.\n' +
+          'ÃÖÁ¾ Á¡¼ö ' + score + ' ÀúÀå ¿Ï·áµÇ¾ú½À´Ï´Ù.\n\n' +
+          'ÀÌ·Î½á °øº¹ ÀÏÁ¤À» ¸¶¹«¸®ÇÕ´Ï´Ù.\n\n' +
+          'ÀÌÁ¦´Â ¼·ÃëÀÇ ±â»İÀ» ´©¸®¼¼¿ä.',
           {
             chat_id: chatId,
             message_id: messageId,
@@ -926,15 +926,15 @@ bot.on('callback_query', async (query) => {
       });
 
       await bot.editMessageText(
-        'í˜„ì¬ ì ìˆ˜ ' + score + ' ì €ì¥ ì™„ë£Œ.\n(í˜„í™©íŒì—ì„œëŠ” ë‹¤ìŒ ì—…ë°ì´íŠ¸ë•Œ ë°˜ì˜ë©ë‹ˆë‹¤)\n\në‹¤ìŒ ì•Œë¦¼ íƒ€ì´ë¨¸ë„ ì„ íƒí•´ ì£¼ì„¸ìš”.',
+        'ÇöÀç Á¡¼ö ' + score + ' ÀúÀå ¿Ï·á.\n(ÇöÈ²ÆÇ¿¡¼­´Â ´ÙÀ½ ¾÷µ¥ÀÌÆ®¶§ ¹İ¿µµË´Ï´Ù)\n\n´ÙÀ½ ¾Ë¸² Å¸ÀÌ¸Óµµ ¼±ÅÃÇØ ÁÖ¼¼¿ä.',
         {
           chat_id: chatId,
           message_id: messageId,
           reply_markup: keyboard([
-            [button('30ë¶„', `alert:30:${session.id}`)],
-            [button('1ì‹œê°„', `alert:60:${session.id}`)],
-            [button('2ì‹œê°„', `alert:120:${session.id}`)],
-            [button('ì•Œë¦¼ ë„ê¸°', `alert:off:${session.id}`)]
+            [button('30ºĞ', `alert:30:${session.id}`)],
+            [button('1½Ã°£', `alert:60:${session.id}`)],
+            [button('2½Ã°£', `alert:120:${session.id}`)],
+            [button('¾Ë¸² ²ô±â', `alert:off:${session.id}`)]
           ])
         }
       );
@@ -945,7 +945,7 @@ bot.on('callback_query', async (query) => {
       const session = await findSession(chatId, query.from.id);
       if (session) await db.collection('liveSessions').doc(session.id).delete();
       draft.set(String(chatId), { step: 'name' });
-      await bot.sendMessage(chatId, 'ìƒˆ ê³µë³µì„ ì‹œì‘í•©ë‹ˆë‹¤. ì´ë¦„_ê·¸ë£¹ í˜•ì‹ìœ¼ë¡œ ì…ë ¥í•´ ì£¼ì„¸ìš”.');
+      await bot.sendMessage(chatId, '»õ °øº¹À» ½ÃÀÛÇÕ´Ï´Ù. ÀÌ¸§_±×·ì Çü½ÄÀ¸·Î ÀÔ·ÂÇØ ÁÖ¼¼¿ä.');
       return;
     }
 
@@ -959,9 +959,9 @@ bot.on('callback_query', async (query) => {
       const session = await findSession(chatId, query.from.id);
       if (!session) return;
       await bot.editMessageReplyMarkup(keyboard([
-        [button('30ë¶„', `alert:30:${session.id}`), button('1ì‹œê°„', `alert:60:${session.id}`)],
-        [button('2ì‹œê°„', `alert:120:${session.id}`)],
-        [button('ì•Œë¦¼ ë„ê¸°', `alert:off:${session.id}`)]
+        [button('30ºĞ', `alert:30:${session.id}`), button('1½Ã°£', `alert:60:${session.id}`)],
+        [button('2½Ã°£', `alert:120:${session.id}`)],
+        [button('¾Ë¸² ²ô±â', `alert:off:${session.id}`)]
       ]), { chat_id: chatId, message_id: messageId });
       return;
     }
@@ -1300,8 +1300,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`HTTP server started: ${PORT}`);
   console.log('Fasting Telegram bot started.');
   console.log('Webhook endpoint: /telegram/webhook');
-  console.log(`First check-in reminder: ${FIRST_CHECKIN_MINUTES}ë¶„`);
-  console.log(`Board snapshot interval: ${BOARD_SNAPSHOT_MINUTES}ë¶„`);
+  console.log(`First check-in reminder: ${FIRST_CHECKIN_MINUTES}ºĞ`);
+  console.log(`Board snapshot interval: ${BOARD_SNAPSHOT_MINUTES}ºĞ`);
   startBoardSnapshotScheduler();
 
   setInterval(() => {
